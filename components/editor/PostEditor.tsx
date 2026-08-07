@@ -8,6 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
 
 import { Plashka } from '@/lib/tiptap/plashka'
@@ -167,6 +168,7 @@ export default function PostEditor({ mine, all, initial }: Props) {
       }),
       Link.configure({ openOnClick: false, autolink: true }),
       Image.configure({ HTMLAttributes: { loading: 'lazy' } }),
+      IndentDropcap,
       TextAlign.configure({ types: ['paragraph', 'heading'] }),
       Placeholder.configure({
         placeholder: 'Туман лёг на мостовую…',
@@ -181,6 +183,11 @@ export default function PostEditor({ mine, all, initial }: Props) {
       Shout,
     ],
     content: initial?.json ?? '',
+    enableContentCheck: true,
+    onContentError: ({ error }) => {
+      // eslint-disable-next-line no-console
+      console.error('[gg-editor] контент поста не прошёл проверку схемы:', error)
+    },
     onUpdate: ({ editor: ed }) => scheduleAutosave(ed),
     editorProps: {
       attributes: { class: 'gg-prose' },
@@ -384,6 +391,17 @@ export default function PostEditor({ mine, all, initial }: Props) {
           <Tool title="По правому краю" on={editor?.isActive({ textAlign: 'right' })}
                 onClick={() => editor?.chain().focus().setTextAlign('right').run()}>
             ⇥
+          </Tool>
+
+          <span className="gg-bar__sep" />
+
+          <Tool title="Отступ абзаца" on={editor?.isActive('paragraph', { indent: true })}
+                onClick={() => editor?.chain().focus().toggleIndent().run()}>
+            ⇉
+          </Tool>
+          <Tool title="Буквица" on={editor?.isActive('paragraph', { dropcap: true })}
+                onClick={() => editor?.chain().focus().toggleDropcap().run()}>
+            А
           </Tool>
 
           <span className="gg-bar__sep" />
