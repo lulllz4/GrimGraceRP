@@ -116,7 +116,6 @@ export default async function PostPage({
     <main
       data-element={element}
       data-vignette={atmo?.vignette ? '' : undefined}
-      data-light={atmo?.light ? '' : undefined}
       style={{ ...themeStyle, ...atmosphereStyle(atmo) } as React.CSSProperties}
       className={`gg-post gg-atmo${atmo?.indentAll ? ' gg-indent-all' : ''}`}
     >

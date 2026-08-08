@@ -1716,18 +1716,38 @@ select.field { cursor: pointer }
   pointer-events: none;
 }
 
-/* световая дымка */
-.gg-atmo::before { background: var(--post-haze, transparent); }
+/* свет и зерно бумаги — двумя слоями в одном псевдоэлементе */
+.gg-atmo::before {
+  background: var(--post-light, transparent), var(--post-grain, none);
+}
 
-/* виньетка — отдельным выключателем */
+/* виньетка — отдельным выключателем. Её цвет приезжает от материала:
+   по светлой бумаге чёрная виньетка выглядит грязным пятном. */
 .gg-atmo::after { background: transparent; }
 .gg-atmo[data-vignette]::after {
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.6) 100%);
+  background: radial-gradient(ellipse at center, transparent 42%, var(--post-veil, rgba(0,0,0,.6)) 100%);
 }
-/* по светлой странице чёрная виньетка выглядит грязным пятном —
-   притеняем тёплым коричневым и вдвое слабее */
-.gg-atmo[data-light][data-vignette]::after {
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(70,55,35,.28) 100%);
+
+/* ---- набор: типографика приезжает переменными ---- */
+
+.gg-atmo .gg-post__title,
+.gg-atmo .gg-editor__title {
+  font-size: var(--post-h-size, 2.6rem);
+  letter-spacing: var(--post-h-track, .02em);
+  text-transform: var(--post-h-case, none);
+  font-weight: var(--post-h-weight, 400);
+}
+
+.gg-atmo .gg-prose {
+  font-size: var(--post-size, 1.16rem);
+  line-height: var(--post-line, 1.85);
+}
+
+/* линейки над и под шапкой — набор «Хроника» и «Газета» */
+.gg-atmo .gg-post__byline {
+  border-top: var(--post-rule, 0) solid var(--line);
+  border-bottom: var(--post-rule, 0) solid var(--line);
+  padding: calc(var(--post-rule, 0px) * 4) 0;
 }
 
 /* текст обязан лежать выше обоих слоёв */

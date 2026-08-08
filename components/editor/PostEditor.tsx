@@ -18,12 +18,14 @@ import { BLOCK_GROUPS, BLOCKS, DIVIDERS, DIVIDER_KINDS, POST_KINDS, type BlockKe
 import { savePost } from '@/lib/actions/posts'
 import { ELEMENTS, THEME_FONTS, characterThemeStyle, type ThemeFontKey } from '@/lib/elements'
 import {
-  BACKDROPS,
-  BACKDROP_LIST,
+  MATERIALS, MATERIAL_LIST,
+  LIGHTS, LIGHT_LIST,
+  SETS, SET_LIST,
+  READY, READY_LIST,
   EMPTY_ATMOSPHERE,
   atmosphereStyle,
   type Atmosphere,
-  type BackdropKey,
+  type SetKey,
 } from '@/lib/atmosphere'
 
 /* ---------------- типы ---------------- */
@@ -492,7 +494,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           </button>
           <button type="button" className="gg-tab" data-on={panel === 'atmo' ? '' : undefined}
                   onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}>
-            Атмосфера {atmo.backdrop !== 'none' && `(${BACKDROPS[atmo.backdrop].label})`}
+            Оформление ({MATERIALS[atmo.material].label} · {SETS[atmo.set].label})
           </button>
           <button type="button" className="gg-tab" data-on={panel === 'meta' ? '' : undefined}
                   onClick={() => setPanel(panel === 'meta' ? null : 'meta')}>
@@ -596,26 +598,84 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       {panel === 'atmo' && (
         <div className="gg-drawer">
           <div className="gg-drawer__group">
-            <div className="gg-drawer__label">Фон сцены</div>
+            <div className="gg-drawer__label">Готовые</div>
             <div className="gg-drawer__grid">
-              {BACKDROP_LIST.map((key) => (
+              {READY_LIST.map((key) => {
+                const r = READY[key]
+                const on =
+                  atmo.material === r.material && atmo.light === r.light && atmo.set === r.set
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className="gg-chip gg-chip--atmo"
+                    data-on={on ? '' : undefined}
+                    style={{ background: MATERIALS[r.material].bg }}
+                    onClick={() =>
+                      setAtmo({
+                        ...atmo,
+                        material: r.material,
+                        light: r.light,
+                        set: r.set,
+                        indentAll: SETS[r.set].indent,
+                      })
+                    }
+                  >
+                    {r.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Материал страницы</div>
+            <div className="gg-drawer__grid">
+              {MATERIAL_LIST.map((key) => (
                 <button
                   key={key}
                   type="button"
                   className="gg-chip gg-chip--atmo"
-                  data-on={atmo.backdrop === key ? '' : undefined}
-                  style={{
-                    /* образец фона прямо на кнопке */
-                    background: key === 'none' ? undefined : BACKDROPS[key].bg,
-                    borderColor: atmo.backdrop === key ? BACKDROPS[key].accent : undefined,
-                  }}
-                  onClick={() => setAtmo({ ...atmo, backdrop: key })}
+                  data-on={atmo.material === key ? '' : undefined}
+                  style={{ background: MATERIALS[key].bg }}
+                  onClick={() => setAtmo({ ...atmo, material: key })}
                 >
-                  <span
-                    className="gg-chip__dot"
-                    style={{ background: BACKDROPS[key].accent }}
-                  />
-                  {BACKDROPS[key].label}
+                  {MATERIALS[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Свет</div>
+            <div className="gg-drawer__grid">
+              {LIGHT_LIST.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="gg-chip"
+                  data-on={atmo.light === key ? '' : undefined}
+                  onClick={() => setAtmo({ ...atmo, light: key })}
+                >
+                  {LIGHTS[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Набор</div>
+            <div className="gg-drawer__grid">
+              {SET_LIST.map((key: SetKey) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="gg-chip"
+                  data-on={atmo.set === key ? '' : undefined}
+                  /* набор задаёт и красную строку — но её можно снять ниже */
+                  onClick={() => setAtmo({ ...atmo, set: key, indentAll: SETS[key].indent })}
+                >
+                  {SETS[key].label}
                 </button>
               ))}
             </div>
@@ -627,7 +687,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
               <input
                 type="color"
                 className="gg-color"
-                value={atmo.bgColor ?? (atmo.light ? '#f5f0e6' : '#0b0b0d')}
+                value={atmo.bgColor ?? (MATERIALS[atmo.material].dark ? '#0b0b0d' : '#f5f0e6')}
                 onChange={(e) => setAtmo({ ...atmo, bgColor: e.target.value })}
                 title="Свой цвет страницы"
               />
@@ -666,18 +726,11 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                 onChange={(e) => handleBackgroundFile(e.target.files?.[0])}
               />
 
-              <label className="gg-check">
-                <input
-                  type="checkbox"
-                  checked={atmo.light}
-                  onChange={(e) => setAtmo({ ...atmo, light: e.target.checked })}
-                />
-                <span>Светлая гамма — тёмный текст по светлой странице</span>
-              </label>
-
               <small className="gg-hint">
-                Что сильнее: картинка, потом свой цвет, потом готовый фон.
-                Поверх картинки ложится вуаль, иначе текст на ней не прочесть.
+                Что сильнее: картинка, потом свой цвет, потом материал. Цвет
+                текста подбирается по яркости страницы сам — светлого по
+                светлому не получится. Поверх картинки ложится вуаль, иначе
+                по ней не прочесть.
               </small>
             </div>
           </div>
@@ -688,7 +741,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
               <input
                 type="color"
                 className="gg-color"
-                value={atmo.accent ?? BACKDROPS[atmo.backdrop].accent}
+                value={atmo.accent ?? ELEMENTS[element as keyof typeof ELEMENTS]?.accent ?? '#b8323d'}
                 onChange={(e) => setAtmo({ ...atmo, accent: e.target.value })}
                 title="Цвет буквицы, разделителей, плашек и имени"
               />
@@ -781,7 +834,6 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       <div
         className={`gg-canvas gg-atmo${atmo.indentAll ? ' gg-indent-all' : ''}`}
         data-vignette={atmo.vignette ? '' : undefined}
-        data-light={atmo.light ? '' : undefined}
         style={atmosphereStyle(atmo) as React.CSSProperties}
       >
         <EditorContent editor={editor} />

@@ -6,119 +6,204 @@ import {
 } from '@/lib/elements'
 
 /**
- * Атмосфера поста — фон сцены, цвет акцента, шрифт заголовков и виньетка.
- * Настраивается автором в редакторе, живёт в колонке posts.atmosphere (jsonb).
+ * Оформление поста — три слоя.
  *
- * Всё сделано на градиентах и переменных: ни картинок, ни размытий, ни
- * фильтров — иначе телефон снова начнёт лагать (см. работу над мобильной
- * производительностью). Свободу автору даём в рамках проверенного набора:
- * произвольный CSS из браузера в базу не попадает.
+ *   материал — бумага: фон, цвет чернил, линий и зерно;
+ *   свет     — источник и направление подсветки;
+ *   набор    — типографика: заголовки, ритм абзаца, линейки.
+ *
+ * Слои перемножаются: пять материалов на пять источников света на четыре
+ * набора — восемьдесят внешностей вместо одного списка пресетов. Готовые
+ * сочетания (READY) — просто ярлыки к тройке значений.
+ *
+ * Всё на градиентах и переменных: ни картинок, ни размытий, ни фильтров,
+ * иначе телефон снова начнёт лагать. Цвет чернил приезжает ВМЕСТЕ с
+ * материалом — поэтому светлую страницу нельзя случайно получить со светлым
+ * текстом.
  */
 
-export type BackdropKey =
-  | 'none' | 'fog' | 'candle' | 'blood' | 'frost' | 'crypt' | 'ball'
+/* ═══════════════ слой 1: материал ═══════════════ */
 
-export const BACKDROPS: Record<BackdropKey, {
+export type MaterialKey = 'night' | 'velvet' | 'stone' | 'parchment' | 'paper'
+
+export const MATERIALS: Record<MaterialKey, {
   label: string
-  /** основной фон полотна */
   bg: string
-  /** световая дымка поверх фона */
-  haze: string
-  /** цвет акцента, который предлагается вместе с фоном */
-  accent: string
+  /** цвет чернил и всего, что от него зависит */
+  ink: Record<string, string>
+  grain: string
+  /** тёмная ли бумага — от этого зависит вуаль под картинкой и виньетка */
+  dark: boolean
 }> = {
-  none: {
-    label: 'Без атмосферы',
-    bg: 'transparent',
-    haze: 'transparent',
-    accent: '#b8323d',
+  night: {
+    label: 'Ночь',
+    bg: 'linear-gradient(180deg, #101015 0%, #0b0b0d 100%)',
+    ink: {},
+    grain: 'none',
+    dark: true,
   },
-  fog: {
-    label: 'Туман',
-    bg: 'linear-gradient(180deg, #12161b 0%, #0d1013 55%, #0b0b0d 100%)',
-    haze: 'radial-gradient(90% 55% at 50% 12%, rgba(150,170,190,.13), transparent 70%)',
-    accent: '#7c8ea3',
+  velvet: {
+    label: 'Бархат',
+    bg: 'linear-gradient(180deg, #1a1017 0%, #0d090f 100%)',
+    ink: { '--bone': '#e6dccd', '--bone-dim': '#a3948c', '--bone-faint': '#7a6d69', '--line': '#33232f', '--panel': '#1b1119', '--ink-2': '#150e14' },
+    grain: 'none',
+    dark: true,
   },
-  candle: {
-    label: 'Свечи',
-    bg: 'linear-gradient(0deg, #1a1108 0%, #0f0c09 45%, #0b0b0d 100%)',
-    haze: 'radial-gradient(70% 45% at 50% 100%, rgba(220,150,60,.16), transparent 72%)',
-    accent: '#c98a3c',
+  stone: {
+    label: 'Камень',
+    bg: 'linear-gradient(180deg, #121413 0%, #0a0b0a 100%)',
+    ink: { '--bone': '#cfd0c6', '--bone-dim': '#8d8f84', '--bone-faint': '#6b6d63', '--line': '#242a26', '--panel': '#141715', '--ink-2': '#0f110f' },
+    grain: 'none',
+    dark: true,
   },
-  blood: {
-    label: 'Кровь',
-    bg: 'linear-gradient(180deg, #16090c 0%, #0d0709 50%, #0b0b0d 100%)',
-    haze: 'radial-gradient(100% 60% at 50% 0%, rgba(160,30,45,.16), transparent 68%)',
-    accent: '#b8323d',
+  parchment: {
+    label: 'Пергамент',
+    bg: 'linear-gradient(180deg, #e8dcc0 0%, #dccfae 100%)',
+    ink: { '--bone': '#33291b', '--bone-dim': '#6b5d45', '--bone-faint': '#8a7a5c', '--line': '#c2b18a', '--panel': '#e3d6b8', '--ink-2': '#e3d6b8' },
+    grain: 'repeating-linear-gradient(0deg, rgba(120,95,55,.055) 0 1px, transparent 1px 4px)',
+    dark: false,
   },
-  frost: {
-    label: 'Снег',
-    bg: 'linear-gradient(180deg, #141a1e 0%, #0e1215 55%, #0b0b0d 100%)',
-    haze: 'radial-gradient(80% 50% at 50% 8%, rgba(180,215,235,.12), transparent 70%)',
-    accent: '#8fb6c9',
-  },
-  crypt: {
-    label: 'Склеп',
-    bg: 'linear-gradient(180deg, #0f1110 0%, #0a0b0a 60%, #08080a 100%)',
-    haze: 'radial-gradient(100% 70% at 50% 100%, rgba(90,110,80,.10), transparent 65%)',
-    accent: '#6f7a63',
-  },
-  ball: {
-    label: 'Бал',
-    bg: 'linear-gradient(180deg, #171017 0%, #100c11 55%, #0b0b0d 100%)',
-    haze: 'radial-gradient(85% 50% at 50% 0%, rgba(190,150,80,.13), transparent 70%)',
-    accent: '#a8863f',
+  paper: {
+    label: 'Бумага',
+    bg: 'linear-gradient(180deg, #f7f4ec 0%, #efeade 100%)',
+    ink: { '--bone': '#241f1a', '--bone-dim': '#5d564c', '--bone-faint': '#7d766a', '--line': '#d3ccbd', '--panel': '#f2ede2', '--ink-2': '#f2ede2' },
+    grain: 'repeating-linear-gradient(0deg, rgba(0,0,0,.022) 0 1px, transparent 1px 3px)',
+    dark: false,
   },
 }
 
-export const BACKDROP_LIST = Object.keys(BACKDROPS) as BackdropKey[]
+/* ═══════════════ слой 2: свет ═══════════════ */
+
+export type LightKey = 'none' | 'gas' | 'moon' | 'window' | 'hearth'
+
+export const LIGHTS: Record<LightKey, { label: string; glow: string }> = {
+  none:   { label: 'Нет',           glow: 'transparent' },
+  gas:    { label: 'Рожок снизу',   glow: 'radial-gradient(60% 42% at 50% 100%, rgba(226,158,72,.20), transparent 72%)' },
+  moon:   { label: 'Луна сверху',   glow: 'radial-gradient(70% 45% at 50% 0%, rgba(178,205,230,.17), transparent 70%)' },
+  window: { label: 'Окно сбоку',    glow: 'linear-gradient(105deg, rgba(190,205,225,.16) 0%, transparent 42%)' },
+  hearth: { label: 'Камин в углу',  glow: 'radial-gradient(42% 38% at 12% 96%, rgba(220,110,50,.22), transparent 70%)' },
+}
+
+/* ═══════════════ слой 3: набор ═══════════════ */
+
+export type SetKey = 'novel' | 'chronicle' | 'letter' | 'gazette'
+
+export const SETS: Record<SetKey, {
+  label: string
+  font: ThemeFontKey
+  size: string
+  track: string
+  transform: string
+  weight: string
+  bodySize: string
+  bodyLine: string
+  /** линейки над и под шапкой поста */
+  rule: string
+  /** красная строка по умолчанию для этого набора */
+  indent: boolean
+}> = {
+  novel: {
+    label: 'Роман',
+    font: 'cormorant', size: '2.5rem', track: '.02em', transform: 'none', weight: '400',
+    bodySize: '1.16rem', bodyLine: '1.85', rule: '0px', indent: true,
+  },
+  chronicle: {
+    label: 'Хроника',
+    font: 'cormorant', size: '1.9rem', track: '.26em', transform: 'uppercase', weight: '400',
+    bodySize: '1.1rem', bodyLine: '1.75', rule: '1px', indent: false,
+  },
+  letter: {
+    label: 'Письмо',
+    font: 'marck', size: '2.3rem', track: '.01em', transform: 'none', weight: '400',
+    bodySize: '1.18rem', bodyLine: '1.95', rule: '0px', indent: true,
+  },
+  gazette: {
+    /* готическая GothCyr — шрифт буквицы, одна начертанием и без гарантии
+       полного набора глифов; для целого заголовка берём жирную капитель */
+    label: 'Газета',
+    font: 'cormorant', size: '2.9rem', track: '-.01em', transform: 'none', weight: '700',
+    bodySize: '1.06rem', bodyLine: '1.6', rule: '3px', indent: true,
+  },
+}
+
+/* ═══════════════ готовые сочетания ═══════════════ */
+
+export const READY: Record<string, {
+  label: string
+  material: MaterialKey
+  light: LightKey
+  set: SetKey
+}> = {
+  gaslight: { label: 'Газовый рожок', material: 'night',     light: 'gas',    set: 'novel' },
+  moon:     { label: 'Полнолуние',    material: 'stone',     light: 'moon',   set: 'novel' },
+  ink:      { label: 'Бумага и чернила', material: 'paper',  light: 'none',   set: 'chronicle' },
+  crypt:    { label: 'Склеп',         material: 'stone',     light: 'hearth', set: 'chronicle' },
+  ball:     { label: 'Бальная зала',  material: 'velvet',    light: 'window', set: 'gazette' },
+  letter:   { label: 'Письмо',        material: 'parchment', light: 'none',   set: 'letter' },
+}
+
+export const MATERIAL_LIST = Object.keys(MATERIALS) as MaterialKey[]
+export const LIGHT_LIST = Object.keys(LIGHTS) as LightKey[]
+export const SET_LIST = Object.keys(SETS) as SetKey[]
+export const READY_LIST = Object.keys(READY)
+
+/* ═══════════════ сама атмосфера ═══════════════ */
 
 export type Atmosphere = {
-  backdrop: BackdropKey
-  /** свой цвет страницы, #rrggbb — перебивает готовый фон */
-  bgColor: string | null
-  /** картинка фоном, ссылка из нашего хранилища — перебивает и цвет, и фон */
-  bgImage: string | null
-  /** #rrggbb — перебивает и элемент персонажа, и его личную тему */
+  material: MaterialKey
+  light: LightKey
+  set: SetKey
+  /** null — цвет персонажа; иначе перебивает его под сцену */
   accent: string | null
-  /** шрифт заголовков поста */
+  /** свой цвет страницы вместо материала */
+  bgColor: string | null
+  /** картинка фоном — сильнее и материала, и своего цвета */
+  bgImage: string | null
+  /** шрифт заголовков вместо того, что даёт набор */
   font: ThemeFontKey | null
   vignette: boolean
-  /** светлая гамма: тёмный текст по светлой странице */
-  light: boolean
-  /** книжная красная строка во всём посте */
+  /** красная строка во всём посте; по умолчанию берётся из набора */
   indentAll: boolean
 }
 
 export const EMPTY_ATMOSPHERE: Atmosphere = {
-  backdrop: 'none',
+  material: 'night',
+  light: 'none',
+  set: 'novel',
+  accent: null,
   bgColor: null,
   bgImage: null,
-  accent: null,
   font: null,
   vignette: false,
-  light: false,
-  indentAll: false,
+  indentAll: true,
 }
 
-/** Светлая гамма — те же переменные, что и у тёмной, только наоборот. */
-const LIGHT_INK: Record<string, string> = {
-  '--bone': '#2b2620',
-  '--bone-dim': '#5c554a',
-  '--bone-faint': '#847c6e',
-  '--line': '#cec6b6',
-  '--panel': '#efe9dd',
-  '--ink': '#f5f0e6',
-  '--ink-2': '#efe9dd',
+/** Пустая ли атмосфера — такую не храним, чтобы не занимать колонку. */
+function isBlank(a: Atmosphere): boolean {
+  return (
+    a.material === 'night' && a.light === 'none' && a.set === 'novel' &&
+    !a.accent && !a.bgColor && !a.bgImage && !a.font && !a.vignette &&
+    a.indentAll === SETS.novel.indent
+  )
 }
 
-/** Страница по умолчанию для светлой гаммы, если фон не выбран отдельно. */
-const LIGHT_PAGE = 'linear-gradient(180deg, #f7f3ea 0%, #efe8db 100%)'
+/**
+ * Яркость цвета по формуле относительной светимости. Нужна, чтобы по своему
+ * цвету страницы самим подобрать цвет чернил: автор не должен получить
+ * белое по белому, даже если очень постарается.
+ */
+export function isLightColor(hex: string): boolean {
+  const n = parseInt(hex.slice(1), 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const s = v / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.35
+}
 
 /**
  * Ссылка на картинку годится, только если она из нашего хранилища и не
  * содержит символов, которыми можно выскочить из url(...) в инлайн-стиле.
- * Проверяется и на клиенте, и на сервере.
  */
 export function isSafeImageUrl(url: string): boolean {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -127,84 +212,115 @@ export function isSafeImageUrl(url: string): boolean {
   return !/["'()\\\s]/.test(url)
 }
 
+/** Старые ключи фона — до разделения на материал и свет. */
+const LEGACY_BACKDROP: Record<string, { material: MaterialKey; light: LightKey }> = {
+  none:   { material: 'night',  light: 'none' },
+  fog:    { material: 'night',  light: 'moon' },
+  candle: { material: 'night',  light: 'gas' },
+  blood:  { material: 'velvet', light: 'hearth' },
+  frost:  { material: 'stone',  light: 'moon' },
+  crypt:  { material: 'stone',  light: 'hearth' },
+  ball:   { material: 'velvet', light: 'window' },
+}
+
 /**
  * Приводит что угодно к безопасной атмосфере — или к null, если настраивать
- * нечего. Вызывается на сервере перед записью в базу: из браузера может
- * прийти всё что угодно, а уезжает это в инлайн-стиль страницы.
+ * нечего. Вызывается на сервере перед записью: из браузера может прийти всё
+ * что угодно, а уезжает это в инлайн-стиль страницы.
  */
 export function normalizeAtmosphere(raw: unknown): Atmosphere | null {
   if (!raw || typeof raw !== 'object') return null
-  const r = raw as Partial<Record<keyof Atmosphere, unknown>>
+  const r = raw as Record<string, unknown>
 
-  const backdrop: BackdropKey =
-    typeof r.backdrop === 'string' && r.backdrop in BACKDROPS
-      ? (r.backdrop as BackdropKey)
-      : 'none'
+  /* записи, сохранённые до трёхслойного оформления */
+  const legacy =
+    typeof r.backdrop === 'string' ? LEGACY_BACKDROP[r.backdrop] : undefined
+  const legacyLight = r.light === true ? 'paper' : undefined
+
+  const material: MaterialKey =
+    typeof r.material === 'string' && r.material in MATERIALS
+      ? (r.material as MaterialKey)
+      : (legacyLight ?? legacy?.material ?? 'night')
+
+  const light: LightKey =
+    typeof r.light === 'string' && r.light in LIGHTS
+      ? (r.light as LightKey)
+      : (legacy?.light ?? 'none')
+
+  const set: SetKey =
+    typeof r.set === 'string' && r.set in SETS ? (r.set as SetKey) : 'novel'
 
   const accent =
     typeof r.accent === 'string' && isValidHexColor(r.accent) ? r.accent : null
-
   const bgColor =
     typeof r.bgColor === 'string' && isValidHexColor(r.bgColor) ? r.bgColor : null
-
   const bgImage =
     typeof r.bgImage === 'string' && isSafeImageUrl(r.bgImage) ? r.bgImage : null
-
   const font =
     typeof r.font === 'string' && r.font in THEME_FONTS
       ? (r.font as ThemeFontKey)
       : null
 
-  const vignette = r.vignette === true
-  const light = r.light === true
-  const indentAll = r.indentAll === true
-
-  /* ничего не выбрано — не занимаем колонку пустышкой */
-  if (
-    backdrop === 'none' && !accent && !bgColor && !bgImage &&
-    !font && !vignette && !light && !indentAll
-  ) {
-    return null
+  const atmo: Atmosphere = {
+    material,
+    light,
+    set,
+    accent,
+    bgColor,
+    bgImage,
+    font,
+    vignette: r.vignette === true,
+    indentAll: typeof r.indentAll === 'boolean' ? r.indentAll : SETS[set].indent,
   }
 
-  return { backdrop, bgColor, bgImage, accent, font, vignette, light, indentAll }
+  return isBlank(atmo) ? null : atmo
 }
 
 /** Инлайн-стиль: переменные, которые разбирает CSS класса .gg-atmo. */
 export function atmosphereStyle(a: Atmosphere | null | undefined): Record<string, string> {
   if (!a) return {}
-  const style: Record<string, string> = {}
 
-  if (a.light) Object.assign(style, LIGHT_INK)
+  const material = MATERIALS[a.material] ?? MATERIALS.night
+  const set = SETS[a.set] ?? SETS.novel
+  const style: Record<string, string> = { ...material.ink }
 
-  const backdrop = BACKDROPS[a.backdrop] ?? BACKDROPS.none
+  /* — бумага: картинка сильнее своего цвета, свой цвет сильнее материала — */
+  let dark = material.dark
 
-  /* что сильнее: картинка → свой цвет → готовый фон */
   if (a.bgImage && isSafeImageUrl(a.bgImage)) {
-    /* поверх картинки кладём вуаль, иначе текст на ней не прочесть.
-       Никакого background-attachment: fixed — на телефоне это убийца. */
-    const veil = a.light ? 'rgba(245,240,230,.72)' : 'rgba(8,8,10,.62)'
+    const veil = dark ? 'rgba(8,8,10,.62)' : 'rgba(245,240,230,.72)'
     style['--post-bg'] =
       `linear-gradient(${veil}, ${veil}), url("${a.bgImage}") center / cover no-repeat`
-    style['--post-haze'] = 'transparent'
   } else if (a.bgColor && isValidHexColor(a.bgColor)) {
+    /* чернила подбираем по яркости выбранного цвета, а не по материалу:
+       так автор не получит белое по белому, даже если очень постарается */
+    dark = !isLightColor(a.bgColor)
+    Object.assign(style, dark ? MATERIALS.night.ink : MATERIALS.paper.ink)
     style['--post-bg'] = a.bgColor
-    style['--post-haze'] = a.backdrop !== 'none' ? backdrop.haze : 'transparent'
-  } else if (a.backdrop !== 'none') {
-    style['--post-bg'] = backdrop.bg
-    style['--post-haze'] = backdrop.haze
-  } else if (a.light) {
-    style['--post-bg'] = LIGHT_PAGE
+  } else {
+    style['--post-bg'] = material.bg
   }
 
+  style['--post-grain'] = a.bgImage ? 'none' : material.grain
+  style['--post-light'] = LIGHTS[a.light]?.glow ?? 'transparent'
+  style['--post-veil'] = dark ? 'rgba(0,0,0,.55)' : 'rgba(70,55,35,.26)'
+
+  /* — акцент: по умолчанию персонажа, автор может перебить — */
   if (a.accent && isValidHexColor(a.accent)) {
     style['--accent'] = a.accent
     style['--accent-glow'] = hexToRgbTriplet(a.accent)
   }
 
-  if (a.font && THEME_FONTS[a.font]) {
-    style['--font-display'] = THEME_FONTS[a.font].cssVar
-  }
+  /* — набор — */
+  const fontKey = a.font ?? set.font
+  if (THEME_FONTS[fontKey]) style['--font-display'] = THEME_FONTS[fontKey].cssVar
+  style['--post-h-size'] = set.size
+  style['--post-h-track'] = set.track
+  style['--post-h-case'] = set.transform
+  style['--post-h-weight'] = set.weight
+  style['--post-size'] = set.bodySize
+  style['--post-line'] = set.bodyLine
+  style['--post-rule'] = set.rule
 
   return style
 }
