@@ -519,12 +519,29 @@ select.field { cursor: pointer }
 /* ============ ШАПКА ============ */
 
 .gg-header {
+  position: relative;
   border-bottom: 1px solid var(--line);
   background:
     radial-gradient(120% 100% at 50% 0%,
       color-mix(in srgb, var(--crimson) 7%, transparent) 0%,
       transparent 65%),
     var(--ink-2);
+}
+
+/* тонкая кармином черта по нижнему краю: гаснет к краям, поэтому читается
+   как росчерк, а не как рамка. Один градиент — телефону бесплатно. */
+.gg-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--crimson-lt) 70%, transparent) 30%,
+    color-mix(in srgb, var(--crimson-lt) 70%, transparent) 70%,
+    transparent);
 }
 
 /* ---------- вывеска ---------- */
@@ -548,7 +565,8 @@ select.field { cursor: pointer }
   letter-spacing: 0.14em;
   text-indent: 0.14em;
   color: var(--bone);
-  text-shadow: 0 0 40px color-mix(in srgb, var(--crimson) 30%, transparent);
+  /* было размытие в 40 px под каждой литерой — вблизи это выглядит грязным
+     ореолом, а не свечением. Тёплый отблеск даёт сам фон шапки. */
   transition: color 0.4s;
 }
 
@@ -717,36 +735,66 @@ select.field { cursor: pointer }
 
 /* ---------- узкий экран ---------- */
 
+/* На телефоне парадная вывеска занимала 272 px из 953 — почти треть экрана
+   до первой строки текста. Здесь она складывается в одну строку: название
+   слева, навигация под ним одной прокручиваемой лентой. Тот же характер,
+   вчетверо меньше места. */
 @media (max-width: 52rem) {
   .gg-header__crown {
-    padding: 2rem 1.15rem 1.5rem;
+    padding: 0.9rem 1.15rem 0.5rem;
+    text-align: left;
+  }
+
+  .gg-brand {
+    justify-items: start;
+    gap: 0.15rem;
+  }
+
+  .gg-brand__name {
+    font-size: 1.55rem;
+    letter-spacing: 0.1em;
+    text-indent: 0.1em;
+    /* размытая тень под крупным шрифтом — лишняя работа для телефона
+       и вблизи выглядит грязно */
+    text-shadow: none;
+  }
+
+  /* росчерк с флеуроном — украшение парадной версии, в строке он не нужен */
+  .gg-brand__rule { display: none; }
+
+  .gg-brand__sub {
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
   }
 
   .gg-header__inner {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem 1.15rem 1rem;
+    padding: 0.15rem 1.15rem 0.35rem;
+    min-height: 0;
+    justify-content: flex-start;
+    gap: 0.9rem;
   }
+
+  /* навигация одной лентой с прокруткой вбок: раньше она переносилась
+     в два-три ряда и растила шапку */
+  .gg-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gg-nav::-webkit-scrollbar { display: none; }
+  .gg-nav__link { padding: 0.45rem 0.1rem; font-size: 0.9rem; white-space: nowrap; }
+  .gg-nav__link::after { bottom: 0.2rem; }
+  .gg-nav__dot { opacity: 0.5; }
 
   .gg-user {
     position: static;
     transform: none;
-    justify-content: center;
-  }
-
-  .gg-nav {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.9rem;
-  }
-
-  .gg-nav__link {
-    padding: 0.5rem 0.2rem;
-    font-size: 0.95rem;
-  }
-
-  .gg-nav__link::after {
-    bottom: 0.2rem;
+    margin-left: auto;
+    flex: none;
   }
 }
 
@@ -2568,20 +2616,6 @@ select.field { cursor: pointer }
     position: static;
     max-height: none;
     overflow-y: visible;
-  }
-
-  /* ПРОВЕРКА: ?plain=1 снимает с плашек всё дорогое для отрисовки —
-     вырезанные углы, тени-фильтры, наклоны и многослойные фоны.
-     Если с этим флагом телефон перестаёт виснуть, причина в отрисовке;
-     если виснет всё равно — причина в другом, и я ищу дальше. */
-  .gg-plain .gg-plashka,
-  .gg-plain .gg-plashka::before,
-  .gg-plain .gg-plashka::after {
-    clip-path: none !important;
-    filter: none !important;
-    transform: none !important;
-    background: var(--panel) !important;
-    box-shadow: none !important;
   }
 
   /* на узком экране полный отступ первой строки съедает строку */

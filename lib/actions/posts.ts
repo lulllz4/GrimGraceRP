@@ -70,19 +70,19 @@ export async function savePost(p: PostPayload): Promise<SaveResult> {
 
   let postId = p.id
 
-  /* дата публикации проставляется один раз */
+  /* Дата публикации проставляется один раз и больше не трогается.
+     Раньше при возврате поста в черновики она обнулялась — и первоначальная
+     дата терялась навсегда, а повторная публикация ставила новую. */
   let publishedAt: string | null = null
-  if (p.status === 'published') {
-    if (postId) {
-      const { data: prev } = await supabase
-        .from('posts')
-        .select('published_at')
-        .eq('id', postId)
-        .single()
-      publishedAt = prev?.published_at ?? new Date().toISOString()
-    } else {
-      publishedAt = new Date().toISOString()
-    }
+  if (postId) {
+    const { data: prev } = await supabase
+      .from('posts')
+      .select('published_at')
+      .eq('id', postId)
+      .single()
+    publishedAt = prev?.published_at ?? (p.status === 'published' ? new Date().toISOString() : null)
+  } else if (p.status === 'published') {
+    publishedAt = new Date().toISOString()
   }
 
   const row = {

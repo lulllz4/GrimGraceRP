@@ -107,22 +107,19 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bgInputRef = useRef<HTMLInputElement>(null)
 
-  /* ВРЕМЕННОЕ: ?plain=1 в адресе — режим без украшений, чтобы понять,
-     виновата ли отрисовка плашек в зависании телефона */
-  const [plain, setPlain] = useState(false)
-  useEffect(() => {
-    setPlain(new URLSearchParams(window.location.search).has('plain'))
-  }, [])
-
   /* ---------- автосохранение в браузере ---------- */
   const DRAFT_KEY = `gg-draft:${initial?.id ?? 'new'}`
   const [draftFound, setDraftFound] = useState<string | null>(null) // время найденного черновика
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /* Редактор объявлен ниже, а эта функция нужна ему самому в onUpdate —
+     ссылка друг на друга разрывается через ref: читаем его в момент
+     срабатывания таймера, когда редактор точно создан. */
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null)
 
-  function scheduleAutosave(editorForSave?: typeof editor) {
+  function scheduleAutosave(editorForSave?: ReturnType<typeof useEditor>) {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      const ed = editorForSave ?? editor
+      const ed = editorForSave ?? editorRef.current
       if (!ed) return
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
@@ -163,6 +160,10 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
         const d = JSON.parse(raw)
+        /* Читать localStorage можно только после гидратации: на сервере его
+           нет, и попытка узнать про черновик раньше даст расхождение разметки.
+           Правило про setState в эффекте здесь неприменимо. */
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (d?.savedAt) setDraftFound(d.savedAt)
       }
     } catch { /* ignore */ }
@@ -223,8 +224,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
 
   /* ВРЕМЕННОЕ: даёт заглянуть в живой редактор из консоли браузера.
      Заодно служит меткой сборки: если `ggEditor` в консоли есть — на сайте
-     свежий код. Убрать, когда разберёмся с картинками. */
+     свежий код. Убрать, когда разберёмся с зависанием на телефоне. */
   useEffect(() => {
+    editorRef.current = editor
     if (!editor) return
     const w = window as unknown as { ggEditor?: unknown }
     w.ggEditor = editor
@@ -336,8 +338,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     <div
       data-element={element}
       style={themeStyle as React.CSSProperties}
-      /* ВРЕМЕННОЕ: ?plain=1 — проверка, виновата ли отрисовка плашек */
-      className={`gg-editor${plain ? ' gg-plain' : ''}`}
+      className="gg-editor"
     >
 
       {draftFound && (

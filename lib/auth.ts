@@ -50,8 +50,3 @@ export async function requireAdmin(): Promise<Profile> {
   if (profile.role !== 'admin') redirect('/?e=forbidden')
   return profile
 }
-
-export const getMe = getProfile
-export const requireAuth = requireUser
-export const getSession = getProfile
-export const requireMod = requireStaff

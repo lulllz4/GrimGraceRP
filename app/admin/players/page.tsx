@@ -4,6 +4,16 @@ import { createPlayer, resetPassword, toggleBan } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
+type PlayerRow = {
+  id: string
+  username: string
+  display_name: string | null
+  role: string
+  is_banned: boolean
+  contact: string | null
+  characters: { name: string; slug: string }[] | null
+}
+
 export default async function PlayersPage({
   searchParams,
 }: { searchParams: Promise<{ e?: string; ok?: string }> }) {
@@ -50,7 +60,7 @@ export default async function PlayersPage({
       <div className="section-title"><h2>Все</h2><span className="count">{players?.length ?? 0}</span></div>
 
       <div className="rows">
-        {players?.map((p: any) => (
+        {(players as PlayerRow[] | null)?.map((p) => (
           <div key={p.id} className="row">
             <div style={{ flex: '1 1 12rem' }}>
               <strong>{p.display_name || p.username}</strong>
@@ -60,7 +70,7 @@ export default async function PlayersPage({
 
             <div style={{ flex: '1 1 12rem', fontSize: '.9rem' }}>
               {p.characters?.length
-                ? p.characters.map((c: any) => c.name).join(', ')
+                ? p.characters.map((c) => c.name).join(', ')
                 : <span className="faint">нет ролей</span>}
             </div>
 

@@ -8,6 +8,24 @@ import { requireStaff } from '@/lib/auth'
 
 const DOMAIN = process.env.EMAIL_DOMAIN || 'users.grimgrace.local'
 
+/**
+ * Модератору нельзя трогать чужие админские учётки: смена пароля и бан
+ * доступны всему составу, а значит модератор мог бы сбросить пароль
+ * администратору и войти под ним. Админ вправе трогать кого угодно.
+ */
+async function assertMayTouch(actor: { id: string; role: string }, targetId: string) {
+  if (actor.role === 'admin') return
+
+  const admin = createAdminClient()
+  const { data: target } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', targetId)
+    .single()
+
+  if (target?.role === 'admin') redirect('/admin/players?e=forbidden')
+}
+
 /* ---------- создать игрока ---------- */
 export async function createPlayer(formData: FormData) {
   await requireStaff()
@@ -43,10 +61,11 @@ export async function createPlayer(formData: FormData) {
 
 /* ---------- сбросить пароль ---------- */
 export async function resetPassword(formData: FormData) {
-  await requireStaff()
+  const me = await requireStaff()
   const id = String(formData.get('id'))
   const password = String(formData.get('password') || '')
   if (password.length < 8) redirect('/admin/players?e=badpass')
+  await assertMayTouch(me, id)
 
   const admin = createAdminClient()
   await admin.auth.admin.updateUserById(id, { password })
@@ -58,9 +77,10 @@ export async function resetPassword(formData: FormData) {
 
 /* ---------- бан ---------- */
 export async function toggleBan(formData: FormData) {
-  await requireStaff()
+  const me = await requireStaff()
   const id = String(formData.get('id'))
   const value = String(formData.get('value')) === 'true'
+  await assertMayTouch(me, id)
 
   const admin = createAdminClient()
   await admin.from('profiles').update({ is_banned: value }).eq('id', id)

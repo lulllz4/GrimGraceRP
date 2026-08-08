@@ -22,14 +22,15 @@ export default async function AdminRoster() {
     return { ...c, profiles: Array.isArray(p) ? p[0] ?? null : p }
   })
 
-  const byRegion = new Map<RegionKey, any[]>()
+  type CharRow = (typeof data)[number]
+  const byRegion = new Map<RegionKey, CharRow[]>()
   for (const c of data ?? []) {
     const r = c.region as RegionKey
     if (!byRegion.has(r)) byRegion.set(r, [])
     byRegion.get(r)!.push(c)
   }
 
-  const taken = (data ?? []).filter((c: any) => c.status === 'active').length
+  const taken = data.filter((c) => c.status === 'active').length
 
   return (
     <div className="wrap-wide" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
@@ -48,7 +49,7 @@ export default async function AdminRoster() {
           </div>
 
           <div className="rows">
-            {byRegion.get(r)!.map((c: any) => (
+            {byRegion.get(r)!.map((c) => (
               <Link key={c.id} href={`/admin/roster/${c.slug}`} className="row row-link" data-element={c.element}>
                 <span className="dot" style={{ background: 'var(--accent)' }} />
                 <strong style={{ flex: '1 1 9rem' }}>{c.name}</strong>

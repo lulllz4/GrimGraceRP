@@ -11,6 +11,11 @@ export default function InfiniteFeed({ initialPosts }: { initialPosts: FeedPost[
   const [done, setDone] = useState(initialPosts.length < PAGE_SIZE)
   const [pending, startTransition] = useTransition()
   const sentinelRef = useRef<HTMLDivElement>(null)
+  /* Замок именно в ref, а не в pending: обработчик наблюдателя видит
+     значение состояния на момент подписки, и при быстрой прокрутке одна
+     и та же страница успевала загрузиться дважды — карточки задваивались,
+     а React ругался на одинаковые ключи. */
+  const loadingRef = useRef(false)
 
   useEffect(() => {
     if (done) return
@@ -19,12 +24,17 @@ export default function InfiniteFeed({ initialPosts }: { initialPosts: FeedPost[
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !pending) {
+        if (entries[0].isIntersecting && !loadingRef.current) {
+          loadingRef.current = true
           startTransition(async () => {
-            const next = await loadMoreFeed(page)
-            setPosts((prev) => [...prev, ...next])
-            setPage((p) => p + 1)
-            if (next.length < PAGE_SIZE) setDone(true)
+            try {
+              const next = await loadMoreFeed(page)
+              setPosts((prev) => [...prev, ...next])
+              setPage((p) => p + 1)
+              if (next.length < PAGE_SIZE) setDone(true)
+            } finally {
+              loadingRef.current = false
+            }
           })
         }
       },

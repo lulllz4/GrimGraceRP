@@ -22,6 +22,8 @@ export default function InfiniteMyPosts({ initialPosts }: { initialPosts: MyPost
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const sentinelRef = useRef<HTMLDivElement>(null)
+  /* см. InfiniteFeed: замок в ref, потому что pending в обработчике устаревает */
+  const loadingRef = useRef(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const firstRun = useRef(true)
 
@@ -73,12 +75,17 @@ export default function InfiniteMyPosts({ initialPosts }: { initialPosts: MyPost
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !pending) {
+        if (entries[0].isIntersecting && !loadingRef.current) {
+          loadingRef.current = true
           startTransition(async () => {
-            const next = await loadMoreMyPosts(page, query, status)
-            setPosts((prev) => [...prev, ...next])
-            setPage((p) => p + 1)
-            if (next.length < PAGE_SIZE) setDone(true)
+            try {
+              const next = await loadMoreMyPosts(page, query, status)
+              setPosts((prev) => [...prev, ...next])
+              setPage((p) => p + 1)
+              if (next.length < PAGE_SIZE) setDone(true)
+            } finally {
+              loadingRef.current = false
+            }
           })
         }
       },

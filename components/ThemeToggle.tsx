@@ -1,30 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 /**
  * Переключатель светлой и тёмной темы.
  *
- * Тема хранится в localStorage и ставится атрибутом data-theme на <html>.
- * Чтобы страница не мигала тёмным при загрузке светлой, атрибут выставляет
- * крошечный скрипт в <head> ещё до первой отрисовки (см. layout.tsx) —
- * компонент только показывает текущее состояние и переключает его.
+ * Тема хранится в localStorage и ставится атрибутом data-theme на <html>
+ * ещё до первой отрисовки — крошечным скриптом в <head> (см. layout.tsx),
+ * иначе светлая страница успевала бы мигнуть чёрным.
+ *
+ * Компонент читает тему из самого DOM через useSyncExternalStore: на сервере
+ * темы не знаем, поэтому серверный снимок всегда «тёмная», а после гидратации
+ * React сам перечитает настоящее значение. Так обходимся без setState в
+ * эффекте и без лишней перерисовки.
  */
+
+const EVENT = 'gg-theme'
+
+function subscribe(onChange: () => void) {
+  window.addEventListener(EVENT, onChange)
+  return () => window.removeEventListener(EVENT, onChange)
+}
+
+function readTheme(): 'dark' | 'light' {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+}
+
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const theme = useSyncExternalStore(subscribe, readTheme, () => 'dark' as const)
 
-  /* на сервере темы не знаем — читаем уже проставленный скриптом атрибут */
-  useEffect(() => {
-    const now = document.documentElement.dataset.theme
-    setTheme(now === 'light' ? 'light' : 'dark')
-  }, [])
-
-  function flip() {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
+  const flip = useCallback(() => {
+    const next = readTheme() === 'dark' ? 'light' : 'dark'
     document.documentElement.dataset.theme = next
     try { localStorage.setItem('gg-theme', next) } catch { /* приватный режим */ }
-  }
+    window.dispatchEvent(new Event(EVENT))
+  }, [])
 
   return (
     <button
