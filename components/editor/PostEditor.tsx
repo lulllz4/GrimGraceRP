@@ -107,6 +107,13 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bgInputRef = useRef<HTMLInputElement>(null)
 
+  /* ВРЕМЕННОЕ: ?plain=1 в адресе — режим без украшений, чтобы понять,
+     виновата ли отрисовка плашек в зависании телефона */
+  const [plain, setPlain] = useState(false)
+  useEffect(() => {
+    setPlain(new URLSearchParams(window.location.search).has('plain'))
+  }, [])
+
   /* ---------- автосохранение в браузере ---------- */
   const DRAFT_KEY = `gg-draft:${initial?.id ?? 'new'}`
   const [draftFound, setDraftFound] = useState<string | null>(null) // время найденного черновика
@@ -326,7 +333,12 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   }
 
   return (
-    <div data-element={element} style={themeStyle as React.CSSProperties} className="gg-editor">
+    <div
+      data-element={element}
+      style={themeStyle as React.CSSProperties}
+      /* ВРЕМЕННОЕ: ?plain=1 — проверка, виновата ли отрисовка плашек */
+      className={`gg-editor${plain ? ' gg-plain' : ''}`}
+    >
 
       {draftFound && (
         <div className="note mb-4" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
@@ -511,7 +523,15 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                     type="button"
                     className="gg-chip"
                     title={BLOCKS[k].hint}
-                    onClick={() => editor?.chain().focus().insertPlashka(k as BlockKey).run()}
+                    onClick={() => {
+                      /* ящик закрываем ДО вставки: он липкий, и если оставить
+                         его открытым, курсор внутри новой плашки и липкая
+                         панель начинают спорить за прокрутку — на телефоне,
+                         где ещё и клавиатура меняет высоту окна, это ощущается
+                         как зависание */
+                      setPanel(null)
+                      editor?.chain().focus().insertPlashka(k as BlockKey).run()
+                    }}
                   >
                     <span className="gg-chip__icon">{BLOCKS[k].icon}</span>
                     <span className="gg-chip__name">{BLOCKS[k].label}</span>
@@ -528,7 +548,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                 type="button"
                 className="gg-chip gg-chip--sym gg-chip--wide"
                 title="Чистая полоса"
-                onClick={() => editor?.chain().focus().insertDivider('line').run()}
+                onClick={() => { setPanel(null); editor?.chain().focus().insertDivider('line').run() }}
               >
                 {DIVIDER_KINDS.line.icon}
               </button>
@@ -536,7 +556,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                 type="button"
                 className="gg-chip gg-chip--sym gg-chip--wide"
                 title="Полоса с орнаментом"
-                onClick={() => editor?.chain().focus().insertDivider('ornament').run()}
+                onClick={() => { setPanel(null); editor?.chain().focus().insertDivider('ornament').run() }}
               >
                 {DIVIDER_KINDS.ornament.icon}
               </button>
@@ -546,7 +566,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                   type="button"
                   className="gg-chip gg-chip--sym"
                   title="Полоса с символом"
-                  onClick={() => editor?.chain().focus().insertDivider('symbol', sym).run()}
+                  onClick={() => { setPanel(null); editor?.chain().focus().insertDivider('symbol', sym).run() }}
                 >
                   {sym}
                 </button>

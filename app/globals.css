@@ -542,7 +542,7 @@ select.field { cursor: pointer }
 }
 
 .gg-brand__name {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 5.5vw, 4.25rem);
   line-height: 0.95;
   letter-spacing: 0.14em;
@@ -624,7 +624,7 @@ select.field { cursor: pointer }
 .gg-nav__link {
   position: relative;
   padding: 1.05rem 0.2rem;
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
   letter-spacing: 0.2em;
   text-indent: 0.2em;
@@ -761,7 +761,7 @@ select.field { cursor: pointer }
 .site-nav__link {
   position: relative;
   padding: 0.35rem 0;
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 0.95rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -824,7 +824,7 @@ select.field { cursor: pointer }
 .gg-prose > p { margin: 0 0 1.15rem; }
 
 .gg-prose h2 {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.9rem;
   letter-spacing: 0.05em;
   margin: 2.4rem 0 1rem;
@@ -832,7 +832,7 @@ select.field { cursor: pointer }
 }
 
 .gg-prose h3 {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   letter-spacing: 0.06em;
   margin: 2rem 0 0.8rem;
@@ -940,7 +940,7 @@ select.field { cursor: pointer }
 }
 
 .gg-plashka__title {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   letter-spacing: 0.08em;
   color: var(--bone);
@@ -1013,7 +1013,7 @@ select.field { cursor: pointer }
 .gg-plashka__field:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
 
 .gg-plashka__field--title {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.2rem;
   letter-spacing: 0.07em;
 }
@@ -1674,7 +1674,7 @@ select.field { cursor: pointer }
 }
 
 .gg-scene__place {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1714,7 +1714,7 @@ select.field { cursor: pointer }
 .gg-scene__in:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
 
 .gg-scene__in--place {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2347,7 +2347,7 @@ select.field { cursor: pointer }
 }
 
 .gg-post__title {
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: clamp(2rem, 5vw, 3.2rem);
   line-height: 1.1;
   letter-spacing: 0.03em;
@@ -2494,7 +2494,7 @@ select.field { cursor: pointer }
 
 .gg-card__title {
   margin: 0.5rem 0 0.6rem;
-  font-family: var(--font-cormorantsc), serif;
+  font-family: var(--font-display);
   font-size: 1.65rem;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -2559,6 +2559,30 @@ select.field { cursor: pointer }
   /* всплывашка на телефоне не должна упираться в края экрана */
   .gg-pop { max-width: 94vw; -webkit-overflow-scrolling: touch; }
   .gg-pop__sep { margin: 0 0.25rem; }
+
+  /* Липкий ящик на телефоне — плохая идея: экранная клавиатура меняет высоту
+     окна, а браузер в это же время тащит курсор в видимую область. Липкий
+     блок с собственной прокруткой в этом споре участвует третьим. Здесь он
+     обычный блок. */
+  .gg-drawer {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  /* ПРОВЕРКА: ?plain=1 снимает с плашек всё дорогое для отрисовки —
+     вырезанные углы, тени-фильтры, наклоны и многослойные фоны.
+     Если с этим флагом телефон перестаёт виснуть, причина в отрисовке;
+     если виснет всё равно — причина в другом, и я ищу дальше. */
+  .gg-plain .gg-plashka,
+  .gg-plain .gg-plashka::before,
+  .gg-plain .gg-plashka::after {
+    clip-path: none !important;
+    filter: none !important;
+    transform: none !important;
+    background: var(--panel) !important;
+    box-shadow: none !important;
+  }
 
   /* на узком экране полный отступ первой строки съедает строку */
   .gg-prose p.gg-indent { text-indent: 1.4em; }
