@@ -193,6 +193,16 @@ export default function PostEditor({ mine, all, initial }: Props) {
     },
   })
 
+  /* ВРЕМЕННОЕ: даёт заглянуть в живой редактор из консоли браузера.
+     Заодно служит меткой сборки: если `ggEditor` в консоли есть — на сайте
+     свежий код. Убрать, когда разберёмся с картинками. */
+  useEffect(() => {
+    if (!editor) return
+    const w = window as unknown as { ggEditor?: unknown }
+    w.ggEditor = editor
+    return () => { delete w.ggEditor }
+  }, [editor])
+
   const wordCount = useEditorState({
     editor,
     selector: ({ editor }) =>

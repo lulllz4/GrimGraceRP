@@ -33,6 +33,9 @@ export function cleanPostHtml(dirty: string): string {
       },
     },
     allowedSchemes: ['http', 'https', 'mailto'],
+    /* картинка без ссылки — пустой узел нулевого размера: в редакторе в него
+       невозможно ткнуть, чтобы удалить. Выбрасываем сразу. */
+    exclusiveFilter: (frame) => frame.tag === 'img' && !frame.attribs.src,
     transformTags: {
       a: (tagName, attribs) => ({
         tagName,

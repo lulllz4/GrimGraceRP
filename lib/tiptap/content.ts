@@ -48,10 +48,37 @@ export function isStrippedDoc(json: unknown): boolean {
 }
 
 /**
+ * Картинка без `src` — узел нулевого размера: в редакторе в него не попасть
+ * ни курсором, ни выделением, а удалить нечем. Информации в нём тоже ноль,
+ * так что выбрасываем и из HTML, и из JSON.
+ */
+const EMPTY_IMG = /<img\b(?![^>]*\ssrc\s*=)[^>]*>/gi
+
+function dropEmptyImages(node: unknown): unknown {
+  if (!node || typeof node !== 'object') return node
+  const n = node as MaybeNode
+
+  if (Array.isArray(n.content)) {
+    const kept = n.content
+      .filter((child) => {
+        const c = child as MaybeNode
+        if (c?.type !== 'image') return true
+        const src = (c.attrs as { src?: unknown } | undefined)?.src
+        return typeof src === 'string' && src.length > 0
+      })
+      .map(dropEmptyImages)
+    return { ...n, content: kept }
+  }
+
+  return node
+}
+
+/**
  * Что отдать редактору: JSON, если он целый, иначе — сохранённый HTML.
  * TipTap принимает и то, и другое.
  */
 export function editorContent(json: unknown, html: string | null | undefined): unknown {
-  if (json && !isStrippedDoc(json)) return json
-  return html?.trim() ? html : (json ?? '')
+  if (json && !isStrippedDoc(json)) return dropEmptyImages(json)
+  if (html?.trim()) return html.replace(EMPTY_IMG, '')
+  return json ? dropEmptyImages(json) : ''
 }
