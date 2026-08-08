@@ -19,10 +19,25 @@ declare module '@tiptap/core' {
 
 /* ---------------- вид в редакторе ---------------- */
 
+/**
+ * ПРОВЕРКА: ?nofields в адресе рисует заголовок и подпись плашки обычным
+ * текстом вместо полей ввода.
+ *
+ * Поле ввода внутри редактируемой области — давняя больная точка мобильных
+ * браузеров: фокус поля и выделение редактора начинают спорить друг с другом.
+ * Если с этим флагом телефон перестаёт виснуть, причина найдена и я переношу
+ * правку заголовка плашки за пределы холста.
+ */
+function noFieldsRequested(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).has('nofields')
+}
+
 function PlashkaView(props: NodeViewProps) {
   const { node, updateAttributes, deleteNode } = props
   const variant = (node.attrs.variant as BlockKey) || 'note'
   const def = BLOCKS[variant] ?? BLOCKS.note
+  const noFields = noFieldsRequested()
 
   return (
     <NodeViewWrapper
@@ -45,12 +60,18 @@ function PlashkaView(props: NodeViewProps) {
 
       {def.title !== false && (
         <div contentEditable={false}>
-          <input
-            className="gg-plashka__field gg-plashka__field--title"
-            value={(node.attrs.title as string) ?? ''}
-            placeholder={def.title}
-            onChange={(e) => updateAttributes({ title: e.target.value })}
-          />
+          {noFields ? (
+            <div className="gg-plashka__field gg-plashka__field--title">
+              {(node.attrs.title as string) || def.title}
+            </div>
+          ) : (
+            <input
+              className="gg-plashka__field gg-plashka__field--title"
+              value={(node.attrs.title as string) ?? ''}
+              placeholder={def.title}
+              onChange={(e) => updateAttributes({ title: e.target.value })}
+            />
+          )}
         </div>
       )}
 
@@ -58,12 +79,18 @@ function PlashkaView(props: NodeViewProps) {
 
       {def.meta !== false && (
         <div contentEditable={false}>
-          <input
-            className="gg-plashka__field gg-plashka__field--meta"
-            value={(node.attrs.meta as string) ?? ''}
-            placeholder={def.meta}
-            onChange={(e) => updateAttributes({ meta: e.target.value })}
-          />
+          {noFields ? (
+            <div className="gg-plashka__field gg-plashka__field--meta">
+              {(node.attrs.meta as string) || def.meta}
+            </div>
+          ) : (
+            <input
+              className="gg-plashka__field gg-plashka__field--meta"
+              value={(node.attrs.meta as string) ?? ''}
+              placeholder={def.meta}
+              onChange={(e) => updateAttributes({ meta: e.target.value })}
+            />
+          )}
         </div>
       )}
     </NodeViewWrapper>

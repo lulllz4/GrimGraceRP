@@ -2143,9 +2143,23 @@ select.field { cursor: pointer }
 }
 
 /* «+» на пустой строке — самый частый жест, поэтому крупнее прочих */
-.gg-pop--float .gg-tool:first-child {
+.gg-pop--float .gg-tool:first-child,
+.gg-pop--bar .gg-tool:first-child {
   font-size: 1.1rem;
   color: var(--accent, var(--bone-dim));
+}
+
+/* Панель для пальца: обычный блок в потоке, одной прокручиваемой строкой.
+   Ни fixed, ни sticky, ни floating-ui — ничего, что пересчитывало бы своё
+   положение, пока экранная клавиатура ездит по экрану. */
+.gg-pop--bar {
+  max-width: 100%;
+  margin: 0 0 1.2rem;
+  border-radius: var(--r);
+}
+.gg-pop--bar .gg-tool {
+  min-width: 2.4rem;
+  height: 2.4rem;
 }
 
 

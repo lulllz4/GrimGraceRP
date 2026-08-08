@@ -11,6 +11,7 @@ import Image from '@tiptap/extension-image'
 import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
 import { shrinkImage } from '@/lib/image'
+import { useIsTouch } from '@/lib/use-touch'
 import CrashCatcher from '@/components/editor/CrashCatcher'
 
 import { Plashka } from '@/lib/tiptap/plashka'
@@ -88,6 +89,7 @@ function Tool({
 
 export default function PostEditor({ mine, all, initial, build }: Props) {
   const router = useRouter()
+  const isTouch = useIsTouch()
 
   const [title, setTitle]         = useState(initial?.title ?? '')
   const [kind, setKind]           = useState(initial?.kind ?? 'roleplay')
@@ -325,6 +327,119 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     router.push(initial?.id ? `/p/${initial.id}` : '/my')
   }
 
+  const inlineTools = (
+    <>
+      <Tool title="Жирный" on={editor?.isActive('bold')}
+            onClick={() => editor?.chain().focus().toggleBold().run()}>
+        <b>Ж</b>
+      </Tool>
+      <Tool title="Курсив" on={editor?.isActive('italic')}
+            onClick={() => editor?.chain().focus().toggleItalic().run()}>
+        <i>К</i>
+      </Tool>
+      <Tool title="Подчёркнутый" on={editor?.isActive('underline')}
+            onClick={() => editor?.chain().focus().toggleUnderline().run()}>
+        <u>Ч</u>
+      </Tool>
+      <Tool title="Зачёркнутый" on={editor?.isActive('strike')}
+            onClick={() => editor?.chain().focus().toggleStrike().run()}>
+        <s>З</s>
+      </Tool>
+
+      <span className="gg-pop__sep" />
+
+      <Tool title="Заголовок" on={editor?.isActive('heading', { level: 2 })}
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
+        H2
+      </Tool>
+      <Tool title="Подзаголовок" on={editor?.isActive('heading', { level: 3 })}
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>
+        H3
+      </Tool>
+      <Tool title="Цитата" on={editor?.isActive('blockquote')}
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
+        ❝
+      </Tool>
+      <Tool title="Список" on={editor?.isActive('bulletList')}
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}>
+        •
+      </Tool>
+
+      <span className="gg-pop__sep" />
+
+      <Tool title="Речь вслух" on={editor?.isActive('speech')}
+            onClick={() => editor?.chain().focus().toggleSpeech().run()}>
+        «»
+      </Tool>
+      <Tool title="Мысль" on={editor?.isActive('thought')}
+            onClick={() => editor?.chain().focus().toggleThought().run()}>
+        ◌
+      </Tool>
+      <Tool title="Шёпот" on={editor?.isActive('whisper')}
+            onClick={() => editor?.chain().focus().toggleWhisper().run()}>
+        ˜
+      </Tool>
+      <Tool title="Крик" on={editor?.isActive('shout')}
+            onClick={() => editor?.chain().focus().toggleShout().run()}>
+        !
+      </Tool>
+
+      <span className="gg-pop__sep" />
+
+      <Tool title="По левому краю" on={editor?.isActive({ textAlign: 'left' })}
+            onClick={() => editor?.chain().focus().setTextAlign('left').run()}>
+        ⇤
+      </Tool>
+      <Tool title="По центру" on={editor?.isActive({ textAlign: 'center' })}
+            onClick={() => editor?.chain().focus().setTextAlign('center').run()}>
+        ⇹
+      </Tool>
+      <Tool title="По правому краю" on={editor?.isActive({ textAlign: 'right' })}
+            onClick={() => editor?.chain().focus().setTextAlign('right').run()}>
+        ⇥
+      </Tool>
+
+      <span className="gg-pop__sep" />
+
+      <Tool title="Красная строка (Ctrl+])"
+            on={editor?.isActive('paragraph', { indent: true })}
+            onClick={() => editor?.chain().focus().toggleIndent().run()}>
+        ⇥
+      </Tool>
+      <Tool title="Буквица" on={editor?.isActive('paragraph', { dropcap: true })}
+            onClick={() => editor?.chain().focus().toggleDropcap().run()}>
+        А
+      </Tool>
+
+    </>
+  )
+
+  const blockTools = (
+    <>
+      <Tool
+        title="Плашки и разделители"
+        on={panel === 'blocks'}
+        onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}
+      >
+        +
+      </Tool>
+      <Tool title="Шапка сцены"
+            onClick={() => editor?.chain().focus().insertSceneHeader().run()}>
+        🌙
+      </Tool>
+      <Tool title="Бросок"
+            onClick={() => editor?.chain().focus().insertDice().run()}>
+        🎲
+      </Tool>
+      <Tool
+        title={imgBusy ? 'Загружаю…' : 'Вставить картинку'}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {imgBusy ? '…' : '🖼'}
+      </Tool>
+    </>
+  )
+
   if (!mine.length) {
     return (
       <div className="note note-warning">
@@ -387,119 +502,27 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         </button>
       </div>
 
-      {/* ====== панель по выделению: появляется там, где работает рука ====== */}
-      {editor && (
-        <BubbleMenu editor={editor} className="gg-pop gg-pop--bubble">
-          <Tool title="Жирный" on={editor?.isActive('bold')}
-                onClick={() => editor?.chain().focus().toggleBold().run()}>
-            <b>Ж</b>
-          </Tool>
-          <Tool title="Курсив" on={editor?.isActive('italic')}
-                onClick={() => editor?.chain().focus().toggleItalic().run()}>
-            <i>К</i>
-          </Tool>
-          <Tool title="Подчёркнутый" on={editor?.isActive('underline')}
-                onClick={() => editor?.chain().focus().toggleUnderline().run()}>
-            <u>Ч</u>
-          </Tool>
-          <Tool title="Зачёркнутый" on={editor?.isActive('strike')}
-                onClick={() => editor?.chain().focus().toggleStrike().run()}>
-            <s>З</s>
-          </Tool>
-
-          <span className="gg-pop__sep" />
-
-          <Tool title="Заголовок" on={editor?.isActive('heading', { level: 2 })}
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
-            H2
-          </Tool>
-          <Tool title="Подзаголовок" on={editor?.isActive('heading', { level: 3 })}
-                onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>
-            H3
-          </Tool>
-          <Tool title="Цитата" on={editor?.isActive('blockquote')}
-                onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
-            ❝
-          </Tool>
-          <Tool title="Список" on={editor?.isActive('bulletList')}
-                onClick={() => editor?.chain().focus().toggleBulletList().run()}>
-            •
-          </Tool>
-
-          <span className="gg-pop__sep" />
-
-          <Tool title="Речь вслух" on={editor?.isActive('speech')}
-                onClick={() => editor?.chain().focus().toggleSpeech().run()}>
-            «»
-          </Tool>
-          <Tool title="Мысль" on={editor?.isActive('thought')}
-                onClick={() => editor?.chain().focus().toggleThought().run()}>
-            ◌
-          </Tool>
-          <Tool title="Шёпот" on={editor?.isActive('whisper')}
-                onClick={() => editor?.chain().focus().toggleWhisper().run()}>
-            ˜
-          </Tool>
-          <Tool title="Крик" on={editor?.isActive('shout')}
-                onClick={() => editor?.chain().focus().toggleShout().run()}>
-            !
-          </Tool>
-
-          <span className="gg-pop__sep" />
-
-          <Tool title="По левому краю" on={editor?.isActive({ textAlign: 'left' })}
-                onClick={() => editor?.chain().focus().setTextAlign('left').run()}>
-            ⇤
-          </Tool>
-          <Tool title="По центру" on={editor?.isActive({ textAlign: 'center' })}
-                onClick={() => editor?.chain().focus().setTextAlign('center').run()}>
-            ⇹
-          </Tool>
-          <Tool title="По правому краю" on={editor?.isActive({ textAlign: 'right' })}
-                onClick={() => editor?.chain().focus().setTextAlign('right').run()}>
-            ⇥
-          </Tool>
-
-          <span className="gg-pop__sep" />
-
-          <Tool title="Красная строка (Ctrl+])"
-                on={editor?.isActive('paragraph', { indent: true })}
-                onClick={() => editor?.chain().focus().toggleIndent().run()}>
-            ⇥
-          </Tool>
-          <Tool title="Буквица" on={editor?.isActive('paragraph', { dropcap: true })}
-                onClick={() => editor?.chain().focus().toggleDropcap().run()}>
-            А
-          </Tool>
-
-        </BubbleMenu>
+      {/* На мыши инструменты всплывают у выделения и у пустой строки.
+          На пальце — обычная панель одной строкой: всплывающие меню
+          пересчитывают своё положение на каждое изменение размера окна,
+          а экранная клавиатура меняет его постоянно. */}
+      {editor && !isTouch && (
+        <>
+          <BubbleMenu editor={editor} className="gg-pop gg-pop--bubble">
+            {inlineTools}
+          </BubbleMenu>
+          <FloatingMenu editor={editor} className="gg-pop gg-pop--float">
+            {blockTools}
+          </FloatingMenu>
+        </>
       )}
 
-      {/* ====== пустая строка: «+» и быстрые вставки, как в teletype ====== */}
-      {editor && (
-        <FloatingMenu editor={editor} className="gg-pop gg-pop--float">
-          <Tool
-            title="Плашки и разделители"
-            on={panel === 'blocks'}
-            onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}
-          >
-            +
-          </Tool>
-          <Tool title="Шапка сцены"
-                onClick={() => editor.chain().focus().insertSceneHeader().run()}>
-            🌙
-          </Tool>
-          <Tool title="Бросок"
-                onClick={() => editor.chain().focus().insertDice().run()}>
-            🎲
-          </Tool>
-          <Tool
-            title={imgBusy ? 'Загружаю…' : 'Вставить картинку'}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {imgBusy ? '…' : '🖼'}
-          </Tool>
-        </FloatingMenu>
+      {editor && isTouch && (
+        <div className="gg-pop gg-pop--bar">
+          {blockTools}
+          <span className="gg-pop__sep" />
+          {inlineTools}
+        </div>
       )}
 
       <input
