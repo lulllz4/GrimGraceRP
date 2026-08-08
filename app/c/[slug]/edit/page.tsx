@@ -73,12 +73,12 @@ export default async function EditSheet({
 
       {sp.e && <div className="note note-warning mb-8">{sp.e}</div>}
 
-      <div className="note mb-10">
-        Имя, элемент и регион задаёт Мастер — их здесь нет. Всё остальное ваше.
-      </div>
-
       <div className="mb-10">
         <AvatarUpload characterId={c.id} initialUrl={c.avatar_url ?? null} />
+      </div>
+
+      <div className="note mb-10">
+        Имя, элемент и регион задаёт Мастер — их здесь нет. Всё остальное ваше.
       </div>
 
       <form action={saveSheet} className="grid gap-6">

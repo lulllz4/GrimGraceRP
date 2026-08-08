@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/auth'
 import { POST_KINDS } from '@/lib/blocks'
 import { ELEMENTS, characterThemeStyle } from '@/lib/elements'
+import { atmosphereStyle, normalizeAtmosphere } from '@/lib/atmosphere'
 import { DIVIDERS } from '@/lib/blocks'
 import DeletePostButton from '@/components/DeletePostButton'
 
@@ -108,8 +109,16 @@ export default async function PostPage({
   const themeStyle = ch ? characterThemeStyle(ch) : {}
   const dividerSym = (ch?.theme_divider && DIVIDERS[ch.theme_divider]) || DIVIDERS.fleuron
 
+  /* атмосфера поста перебивает тему персонажа — она выбрана под конкретную сцену */
+  const atmo = normalizeAtmosphere(post.atmosphere)
+
   return (
-    <main data-element={element} style={themeStyle as React.CSSProperties} className="gg-post">
+    <main
+      data-element={element}
+      data-vignette={atmo?.vignette ? '' : undefined}
+      style={{ ...themeStyle, ...atmosphereStyle(atmo) } as React.CSSProperties}
+      className="gg-post gg-atmo"
+    >
 
       {post.cover_url && (
         <div className="gg-post__cover">

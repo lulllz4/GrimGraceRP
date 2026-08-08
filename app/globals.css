@@ -34,6 +34,9 @@
   --font-mono:    ui-monospace, 'JetBrains Mono', monospace;
 
   --wrap: 44rem;
+
+  /* высота липкой шапки — от неё отсчитывается панель редактора */
+  --head-h: 3.55rem;
 }
 
 [data-element="anemo"]   { --accent:#6fc3a6; --accent-glow:111,195,166 }
@@ -832,9 +835,13 @@ select.field { cursor: pointer }
   color: var(--accent);
 }
 
-.gg-prose p.gg-indent {
-  text-indent: 1.9em;
-}
+/* отступ ступенями — сдвиг всего абзаца от левого края.
+   .gg-indent без цифры — разметка старых постов, читаем как первую ступень. */
+.gg-prose p.gg-indent,
+.gg-prose p.gg-indent-1 { padding-left: 2.4em; }
+.gg-prose p.gg-indent-2 { padding-left: 4.8em; }
+.gg-prose p.gg-indent-3 { padding-left: 7.2em; }
+.gg-prose p.gg-indent-4 { padding-left: 9.6em; }
 
 .gg-prose p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -1677,6 +1684,45 @@ select.field { cursor: pointer }
   color: var(--bone-faint);
 }
 
+/* ═══════════════ АТМОСФЕРА ПОСТА ═══════════════ */
+
+/* Фон сцены и дымка приезжают переменными из atmosphereStyle().
+   Если атмосфера не задана — переменных нет, и слой ничего не рисует. */
+.gg-atmo {
+  position: relative;
+  background: var(--post-bg, transparent);
+}
+
+.gg-atmo::before,
+.gg-atmo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* световая дымка */
+.gg-atmo::before { background: var(--post-haze, transparent); }
+
+/* виньетка — отдельным выключателем */
+.gg-atmo::after { background: transparent; }
+.gg-atmo[data-vignette]::after {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.6) 100%);
+}
+
+/* текст обязан лежать выше обоих слоёв */
+.gg-atmo > * { position: relative; z-index: 1; }
+
+/* карточке в ленте — только намёк: фон без дымки и виньетки */
+.gg-card.gg-atmo::before,
+.gg-card.gg-atmo::after { content: none; }
+
+/* у карточки и холста собственный фон объявлен ниже по файлу и при равной
+   специфичности победил бы атмосферу — поэтому перебиваем двумя классами,
+   оставляя прежний цвет запасным вариантом */
+.gg-card.gg-atmo { background: var(--post-bg, var(--panel)); }
+.gg-canvas.gg-atmo { background: var(--post-bg, var(--ink-2)); }
+
 /* ---- разделитель ---- */
 
 .gg-div {
@@ -1880,10 +1926,18 @@ select.field { cursor: pointer }
 
 /* ---- панель ---- */
 
+/* панель едет вместе с текстом: прилипает сразу под шапкой сайта,
+   чтобы кнопки были под рукой на любой длине поста.
+   z-index ниже шапки (60), но выше холста. */
 .gg-bar {
+  position: sticky;
+  top: var(--head-h);
+  z-index: 40;
   border: 1px solid var(--line);
   background: var(--panel);
   border-radius: 2px;
+  /* тень отделяет панель от уезжающего под неё текста */
+  box-shadow: 0 6px 16px -10px #000;
 }
 
 .gg-bar__row {
@@ -2005,6 +2059,49 @@ select.field { cursor: pointer }
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   color: var(--accent, var(--bone-faint));
+}
+
+/* ---- панель атмосферы ---- */
+
+/* кнопка фона показывает сам фон — выбирать глазами, а не по названию */
+.gg-chip--atmo {
+  gap: 0.5rem;
+  min-height: 2.4rem;
+  border-color: var(--line);
+}
+.gg-chip--atmo[data-on] {
+  color: var(--bone);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.gg-chip__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 0 1px #0006;
+}
+
+.gg-color {
+  width: 3.2rem;
+  height: 2.2rem;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+}
+/* родные обёртки образца цвета в браузерах съедают всю кнопку полями */
+.gg-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.gg-color::-webkit-color-swatch { border: none; border-radius: 1px; }
+
+.gg-drawer__grid--mid { align-items: center; }
+
+.gg-hint {
+  flex-basis: 100%;
+  color: var(--bone-faint);
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .gg-chip--char[data-on] {
@@ -2326,7 +2423,26 @@ select.field { cursor: pointer }
   /* сжатые ряды кнопок редактора — с тонкими пальцами телефона
      промахиваться мимо 30px-кнопок неприятно, поэтому увеличиваем цель */
   .gg-tool { min-width: 2.3rem; height: 2.3rem; font-size: 0.95rem; }
-  .gg-bar__row { gap: 0.3rem; }
+
+  /* панель липкая, а кнопок много: если дать им переноситься, на телефоне
+     они займут пол-экрана. Держим одной строкой и прокручиваем вбок. */
+  .gg-bar__row {
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gg-bar__row::-webkit-scrollbar { display: none; }
+  .gg-bar__sep { flex: none; }
+  .gg-tool { flex: none; }
+
+  /* на узком экране полная ступень отступа съедает строку */
+  .gg-prose p.gg-indent,
+  .gg-prose p.gg-indent-1 { padding-left: 1.4em; }
+  .gg-prose p.gg-indent-2 { padding-left: 2.8em; }
+  .gg-prose p.gg-indent-3 { padding-left: 4.2em; }
+  .gg-prose p.gg-indent-4 { padding-left: 5.6em; }
   .gg-bar__sep { margin: 0 0.3rem; }
   .gg-tab { padding: 0.55rem 0.5rem; }
   .gg-chip { padding: 0.55rem 0.85rem; }

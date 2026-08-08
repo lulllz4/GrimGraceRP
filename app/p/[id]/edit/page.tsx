@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth'
 import PostEditor, { type MiniChar } from '@/components/editor/PostEditor'
 import { editorContent } from '@/lib/tiptap/content'
 import { buildStamp } from '@/lib/build'
+import { normalizeAtmosphere } from '@/lib/atmosphere'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +61,7 @@ export default async function EditPost({
           characterId: post.character_id,
           json: editorContent(post.content_json, post.content_html),
           partnerIds: (partners ?? []).map((p) => p.character_id as string),
+          atmosphere: normalizeAtmosphere(post.atmosphere),
         }}
       />
     </main>

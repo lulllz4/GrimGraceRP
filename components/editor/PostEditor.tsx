@@ -16,7 +16,15 @@ import { SceneHeader, SceneDivider, DiceRoll } from '@/lib/tiptap/nodes'
 import { Speech, Thought, Whisper, Shout } from '@/lib/tiptap/marks'
 import { BLOCK_GROUPS, BLOCKS, DIVIDERS, DIVIDER_KINDS, POST_KINDS, type BlockKey } from '@/lib/blocks'
 import { savePost } from '@/lib/actions/posts'
-import { ELEMENTS, characterThemeStyle } from '@/lib/elements'
+import { ELEMENTS, THEME_FONTS, characterThemeStyle, type ThemeFontKey } from '@/lib/elements'
+import {
+  BACKDROPS,
+  BACKDROP_LIST,
+  EMPTY_ATMOSPHERE,
+  atmosphereStyle,
+  type Atmosphere,
+  type BackdropKey,
+} from '@/lib/atmosphere'
 
 /* ---------------- типы ---------------- */
 
@@ -45,6 +53,7 @@ type Props = {
     characterId: string
     json: unknown
     partnerIds: string[]
+    atmosphere: Atmosphere | null
   }
 }
 
@@ -82,7 +91,8 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   const [mature, setMature]       = useState(initial?.isMature ?? false)
   const [cover, setCover]         = useState(initial?.coverUrl ?? '')
   const [partners, setPartners]   = useState<string[]>(initial?.partnerIds ?? [])
-  const [panel, setPanel]         = useState<'blocks' | 'partners' | 'meta' | null>('blocks')
+  const [atmo, setAtmo]           = useState<Atmosphere>(initial?.atmosphere ?? EMPTY_ATMOSPHERE)
+  const [panel, setPanel]         = useState<'blocks' | 'partners' | 'meta' | 'atmo' | null>('blocks')
   const [busy, setBusy]           = useState(false)
   const [err, setErr]             = useState('')
   const [search, setSearch]       = useState('')
@@ -103,7 +113,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
           savedAt: new Date().toISOString(),
-          title, kind, charId, mature, cover, partners,
+          title, kind, charId, mature, cover, partners, atmo,
           json: ed.getJSON(),
         }))
       } catch { /* localStorage может быть недоступен — просто не сохраняем */ }
@@ -122,6 +132,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       setMature(Boolean(d.mature))
       setCover(d.cover ?? '')
       setPartners(Array.isArray(d.partners) ? d.partners : [])
+      setAtmo(d.atmo && typeof d.atmo === 'object' ? d.atmo : EMPTY_ATMOSPHERE)
       if (d.json) editor.commands.setContent(d.json)
     } catch { /* битый черновик — просто игнорируем */ }
     setDraftFound(null)
@@ -149,7 +160,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     scheduleAutosave()
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, kind, charId, mature, cover, partners])
+  }, [title, kind, charId, mature, cover, partners, atmo])
 
   const element = useMemo(
     () => all.find((c) => c.id === charId)?.element ?? 'beyond',
@@ -236,6 +247,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       json: JSON.stringify(editor.getJSON()),
       plainText: editor.getText(),
       partnerIds: partners,
+      atmosphere: atmo,
     })
 
     setBusy(false)
@@ -408,8 +420,13 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
 
           <span className="gg-bar__sep" />
 
-          <Tool title="Отступ абзаца" on={editor?.isActive('paragraph', { indent: true })}
-                onClick={() => editor?.chain().focus().toggleIndent().run()}>
+          <Tool title="Меньше отступ (Ctrl+[)"
+                onClick={() => editor?.chain().focus().indentLess().run()}>
+            ⇇
+          </Tool>
+          <Tool title="Больше отступ (Ctrl+])"
+                on={Number(editor?.getAttributes('paragraph').indent ?? 0) > 0}
+                onClick={() => editor?.chain().focus().indentMore().run()}>
             ⇉
           </Tool>
           <Tool title="Буквица" on={editor?.isActive('paragraph', { dropcap: true })}
@@ -454,6 +471,10 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           <button type="button" className="gg-tab" data-on={panel === 'partners' ? '' : undefined}
                   onClick={() => setPanel(panel === 'partners' ? null : 'partners')}>
             Соигроки {partners.length > 0 && `(${partners.length})`}
+          </button>
+          <button type="button" className="gg-tab" data-on={panel === 'atmo' ? '' : undefined}
+                  onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}>
+            Атмосфера {atmo.backdrop !== 'none' && `(${BACKDROPS[atmo.backdrop].label})`}
           </button>
           <button type="button" className="gg-tab" data-on={panel === 'meta' ? '' : undefined}
                   onClick={() => setPanel(panel === 'meta' ? null : 'meta')}>
@@ -553,6 +574,95 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         </div>
       )}
 
+      {/* ============ атмосфера ============ */}
+      {panel === 'atmo' && (
+        <div className="gg-drawer">
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Фон сцены</div>
+            <div className="gg-drawer__grid">
+              {BACKDROP_LIST.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="gg-chip gg-chip--atmo"
+                  data-on={atmo.backdrop === key ? '' : undefined}
+                  style={{
+                    /* образец фона прямо на кнопке */
+                    background: key === 'none' ? undefined : BACKDROPS[key].bg,
+                    borderColor: atmo.backdrop === key ? BACKDROPS[key].accent : undefined,
+                  }}
+                  onClick={() => setAtmo({ ...atmo, backdrop: key })}
+                >
+                  <span
+                    className="gg-chip__dot"
+                    style={{ background: BACKDROPS[key].accent }}
+                  />
+                  {BACKDROPS[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Цвет акцента</div>
+            <div className="gg-drawer__grid gg-drawer__grid--mid">
+              <input
+                type="color"
+                className="gg-color"
+                value={atmo.accent ?? BACKDROPS[atmo.backdrop].accent}
+                onChange={(e) => setAtmo({ ...atmo, accent: e.target.value })}
+                title="Цвет буквицы, разделителей, плашек и имени"
+              />
+              <button
+                type="button"
+                className="gg-chip"
+                onClick={() => setAtmo({ ...atmo, accent: null })}
+              >
+                {atmo.accent ? 'Вернуть цвет персонажа' : 'Цвет персонажа'}
+              </button>
+              <small className="gg-hint">
+                Красит буквицу, разделители, плашки и имя. Пусто — берётся цвет персонажа.
+              </small>
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Шрифт заголовков</div>
+            <div className="gg-drawer__grid">
+              <button
+                type="button"
+                className="gg-chip"
+                data-on={!atmo.font ? '' : undefined}
+                onClick={() => setAtmo({ ...atmo, font: null })}
+              >
+                Как у персонажа
+              </button>
+              {(Object.keys(THEME_FONTS) as ThemeFontKey[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="gg-chip"
+                  data-on={atmo.font === key ? '' : undefined}
+                  style={{ fontFamily: THEME_FONTS[key].cssVar }}
+                  onClick={() => setAtmo({ ...atmo, font: key })}
+                >
+                  {THEME_FONTS[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="gg-check">
+            <input
+              type="checkbox"
+              checked={atmo.vignette}
+              onChange={(e) => setAtmo({ ...atmo, vignette: e.target.checked })}
+            />
+            <span>Затемнить края — как свет лампы посреди комнаты</span>
+          </label>
+        </div>
+      )}
+
       {/* ============ обложка и метки ============ */}
       {panel === 'meta' && (
         <div className="gg-drawer gg-drawer--form">
@@ -579,7 +689,12 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       )}
 
       {/* ============ холст ============ */}
-      <div className="gg-canvas">
+      {/* атмосфера видна прямо во время письма, а не только у читателя */}
+      <div
+        className="gg-canvas gg-atmo"
+        data-vignette={atmo.vignette ? '' : undefined}
+        style={atmosphereStyle(atmo) as React.CSSProperties}
+      >
         <EditorContent editor={editor} />
       </div>
 

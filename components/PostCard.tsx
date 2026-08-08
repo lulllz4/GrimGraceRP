@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { POST_KINDS } from '@/lib/blocks'
 import { characterThemeStyle } from '@/lib/elements'
+import { atmosphereStyle, normalizeAtmosphere } from '@/lib/atmosphere'
 
 export type FeedPost = {
   id: string
@@ -17,6 +18,7 @@ export type FeedPost = {
   created_at: string
   characters: { slug: string; name: string; element: string; theme_accent?: string | null; theme_font?: string | null } | null
   profiles: { username: string; display_name: string | null } | null
+  atmosphere?: unknown
 }
 
 const MONTHS = [
@@ -36,8 +38,15 @@ export default function PostCard({ p }: { p: FeedPost }) {
   const element = ch?.element ?? 'beyond'
   const themeStyle = ch ? characterThemeStyle(ch) : {}
 
+  /* на карточке — только намёк: фон и цвет, без дымки и виньетки (см. CSS) */
+  const atmo = normalizeAtmosphere(p.atmosphere)
+
   return (
-    <article data-element={element} style={themeStyle as React.CSSProperties} className="gg-card">
+    <article
+      data-element={element}
+      style={{ ...themeStyle, ...atmosphereStyle(atmo) } as React.CSSProperties}
+      className={atmo ? 'gg-card gg-atmo' : 'gg-card'}
+    >
       {p.cover_url && (
         <Link href={`/p/${p.id}`} className="gg-card__cover" data-veiled={!open ? '' : undefined}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { cleanPostHtml, makeExcerpt } from '@/lib/sanitize'
+import { normalizeAtmosphere } from '@/lib/atmosphere'
 
 export type SaveResult =
   | { ok: true; id: string }
@@ -34,6 +35,7 @@ export type PostPayload = {
   json: string
   plainText: string
   partnerIds: string[]
+  atmosphere: unknown
 }
 
 export async function savePost(p: PostPayload): Promise<SaveResult> {
@@ -93,6 +95,7 @@ export async function savePost(p: PostPayload): Promise<SaveResult> {
     cover_url:    p.coverUrl.trim() || null,
     content_html: cleanPostHtml(p.html),
     content_json: contentJson,
+    atmosphere:   normalizeAtmosphere(p.atmosphere),
     excerpt:      makeExcerpt(p.plainText),
     word_count:   words,
     published_at: publishedAt,

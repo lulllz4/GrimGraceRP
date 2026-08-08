@@ -15,7 +15,7 @@ export async function loadMoreFeed(page: number): Promise<FeedPost[]> {
     .from('posts')
     .select(`
       id, title, excerpt, kind, is_mature, cover_url, word_count,
-      published_at, created_at,
+      published_at, created_at, atmosphere,
       characters:character_id ( slug, name, element, theme_accent, theme_font ),
       profiles:author_id ( username, display_name )
     `)
