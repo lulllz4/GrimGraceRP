@@ -12,6 +12,7 @@ import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
 import { shrinkImage } from '@/lib/image'
 import { useIsTouch } from '@/lib/use-touch'
+import { trace } from '@/lib/trace'
 import CrashCatcher from '@/components/editor/CrashCatcher'
 
 import { Plashka } from '@/lib/tiptap/plashka'
@@ -230,6 +231,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   useEffect(() => {
     editorRef.current = editor
     if (!editor) return
+    /* ВРЕМЕННОЕ: отмечаем открытие редактора и способ ввода — заодно видно,
+       сработало ли определение пальцевого устройства на самом телефоне */
+    trace(`редактор открыт · ${isTouch ? 'палец' : 'мышь'} · сборка ${build ?? '—'}`)
     const w = window as unknown as { ggEditor?: unknown }
     w.ggEditor = editor
     return () => { delete w.ggEditor }
@@ -553,8 +557,14 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                          панель начинают спорить за прокрутку — на телефоне,
                          где ещё и клавиатура меняет высоту окна, это ощущается
                          как зависание */
+                      /* ВРЕМЕННОЕ: пошаговые отметки — ищем, где встаёт телефон */
+                      trace(`нажата плашка «${BLOCKS[k].label}»`)
                       setPanel(null)
+                      trace('ящик закрыт')
                       editor?.chain().focus().insertPlashka(k as BlockKey).run()
+                      trace('вставка вернула управление')
+                      requestAnimationFrame(() => trace('кадр отрисован'))
+                      setTimeout(() => trace('через секунду страница жива'), 1000)
                     }}
                   >
                     <span className="gg-chip__icon">{BLOCKS[k].icon}</span>

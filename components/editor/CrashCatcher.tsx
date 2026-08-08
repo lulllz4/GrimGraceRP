@@ -1,21 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { readTrace, clearTrace } from '@/lib/trace'
 
 /**
- * ВРЕМЕННОЕ: показывает ошибки и зависания прямо на странице.
+ * ВРЕМЕННОЕ: показывает ошибки, зависания и хлебные крошки прямо на странице.
  *
- * На телефоне консоли нет, а ловить «всё крашится» вслепую мы уже пробовали —
- * выходит долго и мимо. Этот сторож пишет три вещи: необработанные ошибки,
- * упавшие обещания и замирания основного потока (по дрейфу таймера — именно
- * так выглядит «зависает»). Текст можно выделить и прислать.
+ * На телефоне консоли нет, а при настоящем зависании до неё и не дойдёт
+ * очередь. Поэтому здесь два источника: живые ошибки текущей сессии и
+ * список шагов, записанный в localStorage — он переживает смерть вкладки
+ * и перезапуск браузера. Последняя строка списка и есть место, где всё встало.
  *
  * Убрать, когда поймаем причину.
  */
 export default function CrashCatcher() {
   const [lines, setLines] = useState<string[]>([])
+  const [steps, setSteps] = useState<string[]>([])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSteps(readTrace())
+
     const add = (s: string) =>
       setLines((prev) => [...prev.slice(-4), `${new Date().toLocaleTimeString('ru-RU')} · ${s}`])
 
@@ -31,7 +36,7 @@ export default function CrashCatcher() {
     window.addEventListener('unhandledrejection', onReject)
 
     /* сторож зависаний: таймер на 250 мс; если он проснулся сильно позже —
-       значит основной поток всё это время был занят и страница не отвечала */
+       значит основной поток всё это время был занят */
     let last = Date.now()
     const id = setInterval(() => {
       const now = Date.now()
@@ -47,12 +52,23 @@ export default function CrashCatcher() {
     }
   }, [])
 
-  if (!lines.length) return null
+  if (!lines.length && !steps.length) return null
 
   return (
     <div className="gg-crash">
-      {lines.map((l, i) => <div key={i}>{l}</div>)}
-      <button type="button" onClick={() => setLines([])}>скрыть</button>
+      {steps.length > 0 && (
+        <>
+          <b>Последние шаги:</b>
+          {steps.map((s, i) => <div key={i}>{s}</div>)}
+        </>
+      )}
+      {lines.map((l, i) => <div key={`e${i}`}>{l}</div>)}
+      <button
+        type="button"
+        onClick={() => { clearTrace(); setSteps([]); setLines([]) }}
+      >
+        очистить
+      </button>
     </div>
   )
 }
