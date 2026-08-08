@@ -35,8 +35,41 @@
 
   --wrap: 44rem;
 
-  /* высота липкой шапки — от неё отсчитывается панель редактора */
-  --head-h: 3.55rem;
+  /* Отступ сверху для липких панелей редактора. Шапка сайта сейчас НЕ липкая,
+     поэтому ноль; если она когда-нибудь станет липкой — поправить здесь одну
+     строку, и всё встанет на место. */
+  --head-h: 0rem;
+
+  /* один радиус на весь сайт: раньше вперемешку жили 2px, 3px и 8px —
+     именно это читалось как «сбито» */
+  --r: 3px;
+}
+
+/* ═══════════════ СВЕТЛАЯ ТЕМА ═══════════════
+   Ставится атрибутом data-theme на <html> (см. ThemeToggle и layout.tsx).
+   Это не инверсия тёмной, а тёплая бумага: тот же кармин, но чуть глубже,
+   иначе по светлому он звенит. */
+:root[data-theme='light'] {
+  --ink:        #f6f2e9;
+  --ink-2:      #f1ece0;
+  --panel:      #ebe5d7;
+  --panel-2:    #e3dccb;
+  --line:       #d3cab6;
+  --bone:       #241f1a;
+  --bone-dim:   #564f45;
+  --bone-faint: #837b6d;
+  --crimson:    #8d2029;
+  --crimson-lt: #97202c;
+
+  --accent:     #97202c;
+  --accent-glow: 151, 32, 44;
+}
+
+/* зернистая плёнка и виньетка сделаны для тёмного фона: по светлой бумаге
+   плёнка читается как грязь, а виньетка — как пятно */
+:root[data-theme='light'] body::before { display: none; }
+:root[data-theme='light'] body::after {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(90,70,45,.16) 100%);
 }
 
 [data-element="anemo"]   { --accent:#6fc3a6; --accent-glow:111,195,166 }
@@ -181,24 +214,6 @@ p { margin: 0 0 1.15em }
 }
 
 /* ═══════════════ ШАПКА ═══════════════ */
-
-.site-head {
-  position: sticky;
-  top: 0;
-  z-index: 60;
-  backdrop-filter: blur(10px);
-  background: rgba(11, 11, 13, .82);
-  border-bottom: 1px solid var(--line);
-}
-
-.site-head-in {
-  max-width: 76rem;
-  margin: 0 auto;
-  padding: .85rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1.6rem;
-}
 
 .brand {
   font-family: var(--font-display);
@@ -681,6 +696,23 @@ select.field { cursor: pointer }
 
 .gg-user__link:hover {
   color: var(--crimson-lt);
+}
+
+/* тумблер темы — луна и солнце, размером с остальные ссылки шапки */
+.gg-theme-toggle {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  cursor: pointer;
+  color: var(--bone-dim);
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.25rem 0.45rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.gg-theme-toggle:hover {
+  color: var(--bone);
+  border-color: var(--line);
 }
 
 /* ---------- узкий экран ---------- */
@@ -1919,15 +1951,19 @@ select.field { cursor: pointer }
    РЕДАКТОР — обвязка
    ================================================================ */
 
+/* Заголовок набирается тем же шрифтом и кеглем, что в готовом посте —
+   автор сразу видит будущую страницу, а не поле ввода.
+   (Здесь была опечатка в имени переменной шрифта, из-за которой заголовок
+   откатывался на системный serif.) */
 .gg-editor__title {
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 1px solid var(--line);
-  padding: 0 0 0.7rem;
-  font-family: var(--font-cormorantsc), serif;
-  font-size: 2.4rem;
-  letter-spacing: 0.04em;
+  border-bottom: 1px solid transparent;
+  padding: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: var(--post-h-size, 2.4rem);
+  letter-spacing: var(--post-h-track, 0.04em);
   color: var(--bone);
   outline: none;
 }
@@ -1966,39 +2002,40 @@ select.field { cursor: pointer }
 
 /* ---- панель ---- */
 
-/* панель едет вместе с текстом: прилипает сразу под шапкой сайта,
-   чтобы кнопки были под рукой на любой длине поста.
-   z-index ниже шапки (60), но выше холста. */
-.gg-bar {
-  position: sticky;
-  top: var(--head-h);
-  z-index: 40;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 2px;
-  /* тень отделяет панель от уезжающего под неё текста */
-  box-shadow: 0 6px 16px -10px #000;
-}
-
-.gg-bar__row {
+/* ---- всплывающие панели редактора ----
+   Постоянной панели больше нет: инструменты приходят туда, где рука.
+   Коробка только у самой всплывашки — она обязана отделяться от текста. */
+.gg-pop {
   display: flex;
   align-items: center;
   gap: 0.15rem;
-  flex-wrap: wrap;
-  padding: 0.45rem 0.6rem;
+  padding: 0.3rem 0.4rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.7);
+  /* на узком экране — одной строкой с прокруткой, а не в четыре ряда */
+  max-width: min(92vw, 42rem);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.gg-pop::-webkit-scrollbar { display: none; }
+.gg-pop .gg-tool { flex: none; }
 
-.gg-bar__row--tabs {
-  border-top: 1px solid var(--line);
-  gap: 0.5rem;
-}
-
-.gg-bar__sep {
+.gg-pop__sep {
   width: 1px;
   height: 1.2rem;
+  flex: none;
   background: var(--line);
-  margin: 0 0.4rem;
+  margin: 0 0.35rem;
 }
+
+/* «+» на пустой строке — самый частый жест, поэтому крупнее прочих */
+.gg-pop--float .gg-tool:first-child {
+  font-size: 1.1rem;
+  color: var(--accent, var(--bone-dim));
+}
+
 
 .gg-tool {
   min-width: 1.9rem;
@@ -2023,6 +2060,26 @@ select.field { cursor: pointer }
   background: color-mix(in srgb, var(--accent, var(--crimson)) 10%, transparent);
 }
 
+/* строка разделов: не коробка, а тихая линия ссылок над холстом */
+.gg-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  margin: 1.6rem 0 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+/* что сейчас выбрано в оформлении — справа, не крича */
+.gg-tabs__now {
+  margin-left: auto;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
 .gg-tab {
   background: none;
   border: none;
@@ -2043,13 +2100,22 @@ select.field { cursor: pointer }
 
 /* ---- выдвижной ящик ---- */
 
+/* Ящик больше не вклинивается в стопку коробок, а ложится слоем поверх
+   текста — страница под ним не дёргается, когда его открывают и закрывают. */
 .gg-drawer {
+  position: sticky;
+  top: calc(var(--head-h) + 0.5rem);
+  z-index: 30;
+  margin-bottom: 1.4rem;
   border: 1px solid var(--line);
-  border-top: none;
-  background: var(--ink-2);
-  padding: 1rem 0.9rem;
+  border-radius: var(--r);
+  background: var(--panel);
+  box-shadow: 0 18px 40px -20px rgba(0,0,0,.8);
+  padding: 1.1rem 1rem;
   display: grid;
   gap: 1.1rem;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .gg-drawer--form { gap: 1rem; }
@@ -2176,12 +2242,17 @@ select.field { cursor: pointer }
 
 /* ---- холст ---- */
 
+/* Холст — не коробка, а страница: ни рамки, ни своей заливки.
+   Фон приходит от материала оформления, а если его нет — просто фон сайта. */
 .gg-canvas {
-  border: 1px solid var(--line);
-  border-top: none;
-  background: var(--ink-2);
-  padding: 2rem 2.2rem 4rem;
-  min-height: 24rem;
+  padding: 1rem 0 6rem;
+  min-height: 60vh;
+}
+
+/* когда материал выбран, странице нужны поля, иначе бумага режется по тексту */
+.gg-canvas.gg-atmo {
+  padding: 2.4rem 2rem 6rem;
+  border-radius: var(--r);
 }
 
 /* ---- подвал ---- */
@@ -2464,38 +2535,19 @@ select.field { cursor: pointer }
      промахиваться мимо 30px-кнопок неприятно, поэтому увеличиваем цель */
   .gg-tool { min-width: 2.3rem; height: 2.3rem; font-size: 0.95rem; }
 
-  /* панель липкая, а кнопок много: если дать им переноситься, на телефоне
-     они займут пол-экрана. Держим одной строкой и прокручиваем вбок. */
-  .gg-bar__row {
-    gap: 0.3rem;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .gg-bar__row::-webkit-scrollbar { display: none; }
-  .gg-bar__sep { flex: none; }
-  .gg-tool { flex: none; }
+  /* всплывашка на телефоне не должна упираться в края экрана */
+  .gg-pop { max-width: 94vw; -webkit-overflow-scrolling: touch; }
+  .gg-pop__sep { margin: 0 0.25rem; }
 
-  /* на узком экране полная ступень отступа съедает строку */
-  .gg-prose p.gg-indent,
-  .gg-prose p.gg-indent-1 { padding-left: 1.4em; }
-  .gg-prose p.gg-indent-2 { padding-left: 2.8em; }
-  .gg-prose p.gg-indent-3 { padding-left: 4.2em; }
-  .gg-prose p.gg-indent-4 { padding-left: 5.6em; }
-  .gg-bar__sep { margin: 0 0.3rem; }
+  /* на узком экране полный отступ первой строки съедает строку */
+  .gg-prose p.gg-indent { text-indent: 1.4em; }
+  .gg-indent-all .gg-prose > p + p { text-indent: 1.4em; }
+
+  .gg-canvas.gg-atmo { padding: 1.4rem 1.1rem 4rem; }
+  .gg-tabs { gap: 0.8rem; }
   .gg-tab { padding: 0.55rem 0.5rem; }
   .gg-chip { padding: 0.55rem 0.85rem; }
   .gg-plashka__kill { padding: 0.4rem 0.5rem; font-size: 0.95rem; }
-
-  /* ---- телефон реально лагает на "backdrop-filter: blur" в липкой шапке:
-     она пересчитывает размытие на КАЖДЫЙ кадр прокрутки — самая частая
-     причина подтормаживания на слабых телефонах. Убираем размытие,
-     оставляем плотный полупрозрачный фон — визуально почти то же самое. */
-  .site-head {
-    backdrop-filter: none;
-    background: rgba(11, 11, 13, .96);
-  }
 
   /* ---- drop-shadow на плашках с вырезанным clip-path (телеграмма, газета,
      афиша, приглашение, досье, некролог, конверт письма) — самый дорогой

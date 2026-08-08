@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth'
 import { logout } from '@/app/login/actions'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default async function Header() {
   const profile = await getProfile()
@@ -54,6 +55,7 @@ export default async function Header() {
           </nav>
 
           <div className="gg-user">
+            <ThemeToggle />
             {profile ? (
               <>
                 <span className="gg-user__name">@{profile.username}</span>

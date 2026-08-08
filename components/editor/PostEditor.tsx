@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react'
+import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
@@ -369,9 +370,32 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         </span>
       </div>
 
-      {/* ============ панель ============ */}
-      <div className="gg-bar">
-        <div className="gg-bar__row">
+      {/* ============ разделы — тихой строкой, без коробки ============ */}
+      <div className="gg-tabs">
+        <button type="button" className="gg-tab" data-on={panel === 'blocks' ? '' : undefined}
+                onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}>
+          Плашки
+        </button>
+        <button type="button" className="gg-tab" data-on={panel === 'partners' ? '' : undefined}
+                onClick={() => setPanel(panel === 'partners' ? null : 'partners')}>
+          Соигроки {partners.length > 0 && `(${partners.length})`}
+        </button>
+        <button type="button" className="gg-tab" data-on={panel === 'atmo' ? '' : undefined}
+                onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}>
+          Оформление
+        </button>
+        <button type="button" className="gg-tab" data-on={panel === 'meta' ? '' : undefined}
+                onClick={() => setPanel(panel === 'meta' ? null : 'meta')}>
+          Обложка и метки
+        </button>
+        <span className="gg-tabs__now">
+          {MATERIALS[atmo.material].label} · {SETS[atmo.set].label}
+        </span>
+      </div>
+
+      {/* ====== панель по выделению: появляется там, где работает рука ====== */}
+      {editor && (
+        <BubbleMenu editor={editor} className="gg-pop gg-pop--bubble">
           <Tool title="Жирный" on={editor?.isActive('bold')}
                 onClick={() => editor?.chain().focus().toggleBold().run()}>
             <b>Ж</b>
@@ -389,7 +413,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             <s>З</s>
           </Tool>
 
-          <span className="gg-bar__sep" />
+          <span className="gg-pop__sep" />
 
           <Tool title="Заголовок" on={editor?.isActive('heading', { level: 2 })}
                 onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
@@ -408,7 +432,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             •
           </Tool>
 
-          <span className="gg-bar__sep" />
+          <span className="gg-pop__sep" />
 
           <Tool title="Речь вслух" on={editor?.isActive('speech')}
                 onClick={() => editor?.chain().focus().toggleSpeech().run()}>
@@ -427,7 +451,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             !
           </Tool>
 
-          <span className="gg-bar__sep" />
+          <span className="gg-pop__sep" />
 
           <Tool title="По левому краю" on={editor?.isActive({ textAlign: 'left' })}
                 onClick={() => editor?.chain().focus().setTextAlign('left').run()}>
@@ -442,7 +466,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             ⇥
           </Tool>
 
-          <span className="gg-bar__sep" />
+          <span className="gg-pop__sep" />
 
           <Tool title="Красная строка (Ctrl+])"
                 on={editor?.isActive('paragraph', { indent: true })}
@@ -454,54 +478,44 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             А
           </Tool>
 
-          <span className="gg-bar__sep" />
+        </BubbleMenu>
+      )}
 
+      {/* ====== пустая строка: «+» и быстрые вставки, как в teletype ====== */}
+      {editor && (
+        <FloatingMenu editor={editor} className="gg-pop gg-pop--float">
+          <Tool
+            title="Плашки и разделители"
+            on={panel === 'blocks'}
+            onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}
+          >
+            +
+          </Tool>
           <Tool title="Шапка сцены"
-                onClick={() => editor?.chain().focus().insertSceneHeader().run()}>
+                onClick={() => editor.chain().focus().insertSceneHeader().run()}>
             🌙
           </Tool>
           <Tool title="Бросок"
-                onClick={() => editor?.chain().focus().insertDice().run()}>
+                onClick={() => editor.chain().focus().insertDice().run()}>
             🎲
           </Tool>
-
-          <span className="gg-bar__sep" />
-
           <Tool
             title={imgBusy ? 'Загружаю…' : 'Вставить картинку'}
             onClick={() => fileInputRef.current?.click()}
           >
             {imgBusy ? '…' : '🖼'}
           </Tool>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            style={{ display: 'none' }}
-            onChange={(e) => handleImageFile(e.target.files?.[0])}
-          />
-        </div>
-        {imgErr && <div className="note note-warning mt-2">{imgErr}</div>}
+        </FloatingMenu>
+      )}
 
-        <div className="gg-bar__row gg-bar__row--tabs">
-          <button type="button" className="gg-tab" data-on={panel === 'blocks' ? '' : undefined}
-                  onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}>
-            Плашки
-          </button>
-          <button type="button" className="gg-tab" data-on={panel === 'partners' ? '' : undefined}
-                  onClick={() => setPanel(panel === 'partners' ? null : 'partners')}>
-            Соигроки {partners.length > 0 && `(${partners.length})`}
-          </button>
-          <button type="button" className="gg-tab" data-on={panel === 'atmo' ? '' : undefined}
-                  onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}>
-            Оформление ({MATERIALS[atmo.material].label} · {SETS[atmo.set].label})
-          </button>
-          <button type="button" className="gg-tab" data-on={panel === 'meta' ? '' : undefined}
-                  onClick={() => setPanel(panel === 'meta' ? null : 'meta')}>
-            Обложка и метки
-          </button>
-        </div>
-      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        style={{ display: 'none' }}
+        onChange={(e) => handleImageFile(e.target.files?.[0])}
+      />
+      {imgErr && <div className="note note-warning mt-2">{imgErr}</div>}
 
       {/* ============ ящик с плашками ============ */}
       {panel === 'blocks' && (
