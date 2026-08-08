@@ -219,7 +219,8 @@ export default function PostEditor({ mine, all, initial }: Props) {
       isMature: mature,
       coverUrl: cover,
       html: editor.getHTML(),
-      json: editor.getJSON(),
+      /* строкой, иначе React вырежет все attrs по пути — см. PostPayload.json */
+      json: JSON.stringify(editor.getJSON()),
       plainText: editor.getText(),
       partnerIds: partners,
     })

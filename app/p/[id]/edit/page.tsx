@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import PostEditor, { type MiniChar } from '@/components/editor/PostEditor'
+import { editorContent } from '@/lib/tiptap/content'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +56,7 @@ export default async function EditPost({
           isMature: post.is_mature,
           coverUrl: post.cover_url ?? '',
           characterId: post.character_id,
-          json: post.content_json,
+          json: editorContent(post.content_json, post.content_html),
           partnerIds: (partners ?? []).map((p) => p.character_id as string),
         }}
       />

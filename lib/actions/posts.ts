@@ -19,7 +19,19 @@ export type PostPayload = {
   isMature: boolean
   coverUrl: string
   html: string
-  json: unknown
+  /**
+   * Документ редактора СТРОКОЙ (`JSON.stringify(editor.getJSON())`), а не объектом — и это важно.
+   *
+   * ProseMirror собирает `attrs` каждого узла через `Object.create(null)`. React отказывается
+   * передавать в серверный экшен объекты без прототипа; поскольку Next всегда подкладывает
+   * `temporaryReferences`, он не падает с ошибкой, а молча подменяет каждый `attrs` на маркер
+   * `"$T"`. На сервере такой маркер разворачивается в прокси над функцией, а `JSON.stringify`
+   * (внутри supabase-js) значения-функции просто выбрасывает. Итог: в базу уезжает документ,
+   * где у КАЖДОГО узла пропали атрибуты — картинки теряют `src`, абзацы выравнивание, плашки вид.
+   *
+   * Строка через этот капкан проходит без изменений. Не менять на объект.
+   */
+  json: string
   plainText: string
   partnerIds: string[]
 }
@@ -42,6 +54,14 @@ export async function savePost(p: PostPayload): Promise<SaveResult> {
   const isStaff = me.role === 'admin' || me.role === 'moderator'
   if (!ch || (ch.current_player_id !== me.id && !isStaff)) {
     return { ok: false, error: 'Этот персонаж вам не принадлежит.' }
+  }
+
+  /* документ приходит строкой — разбираем здесь, на сервере */
+  let contentJson: unknown
+  try {
+    contentJson = JSON.parse(p.json)
+  } catch {
+    return { ok: false, error: 'Не удалось прочитать текст поста. Обновите страницу и попробуйте снова.' }
   }
 
   const words = p.plainText.trim().split(/\s+/).filter(Boolean).length
@@ -72,7 +92,7 @@ export async function savePost(p: PostPayload): Promise<SaveResult> {
     is_mature:    p.isMature,
     cover_url:    p.coverUrl.trim() || null,
     content_html: cleanPostHtml(p.html),
-    content_json: p.json,
+    content_json: contentJson,
     excerpt:      makeExcerpt(p.plainText),
     word_count:   words,
     published_at: publishedAt,
