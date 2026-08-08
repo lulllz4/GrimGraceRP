@@ -6,7 +6,6 @@ import { useEditor, EditorContent, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
-import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
@@ -165,8 +164,8 @@ export default function PostEditor({ mine, all, initial }: Props) {
         heading: { levels: [2, 3] },
         horizontalRule: false,
         codeBlock: false,
+        link: { openOnClick: false, autolink: true },
       }),
-      Link.configure({ openOnClick: false, autolink: true }),
       Image.configure({ HTMLAttributes: { loading: 'lazy' } }),
       IndentDropcap,
       TextAlign.configure({ types: ['paragraph', 'heading'] }),
