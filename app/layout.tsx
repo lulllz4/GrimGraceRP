@@ -33,11 +33,32 @@ export const metadata: Metadata = {
   description: 'Лондон, XIX век. Хроники ночи.',
 }
 
-/* Тему ставим ДО первой отрисовки, иначе светлая страница успевает мигнуть
-   тёмным. Скрипт крошечный и синхронный — именно поэтому он инлайном в head,
-   а не отдельным файлом. suppressHydrationWarning нужен потому, что атрибут
-   на <html> появляется до гидратации и React о нём не знает. */
-const THEME_BOOT = `try{var t=localStorage.getItem('gg-theme');if(t==='light')document.documentElement.dataset.theme='light'}catch(e){}`
+/**
+ * Крошечный синхронный скрипт, который выполняется раньше всего остального —
+ * до React, до стилей, до любой разметки. Делает три вещи.
+ *
+ * 1. Ставит тему, иначе светлая страница успевает мигнуть тёмным.
+ *
+ * 2. Аварийный сброс по ?reset в адресе. Нужен потому, что испорченное
+ *    местное хранилище способно убить вкладку ДО того, как отрисуется хоть
+ *    одна кнопка, — и тогда очистить его изнутри страницы уже нечем.
+ *
+ * 3. Выбрасывает раздувшиеся черновики. Редактор при открытии разбирает
+ *    черновик целиком; если там оказалась огромная строка, разбор кладёт
+ *    вкладку, браузер её поднимает — и так по кругу. Проверка длины строки
+ *    ничего не разбирает и потому безопасна при любом размере.
+ *
+ * suppressHydrationWarning на <html> — потому что атрибут темы появляется
+ * до гидратации и React о нём не знает.
+ */
+const BOOT = `try{
+var t=localStorage.getItem('gg-theme');if(t==='light')document.documentElement.dataset.theme='light';
+var reset=location.search.indexOf('reset')>-1,i,k,v;
+for(i=localStorage.length-1;i>=0;i--){k=localStorage.key(i);
+if(!k||k.indexOf('gg-')!==0||k==='gg-theme'||k==='gg-trace')continue;
+if(reset){localStorage.removeItem(k);continue}
+v=localStorage.getItem(k);if(v&&v.length>2000000)localStorage.removeItem(k)}
+}catch(e){}`.replace(/\n/g, '')
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -47,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${cormorant.variable} ${cormorantSC.variable} ${doulaise.variable} ${marck.variable}`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT }} />
       </head>
       <body>
         <Header />

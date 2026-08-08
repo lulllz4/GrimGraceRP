@@ -63,6 +63,9 @@ type Props = {
   }
 }
 
+/** Потолок для черновика в браузере: выше этого документ уже не текст. */
+const MAX_DRAFT = 2_000_000
+
 /* ---------------- кнопка панели ---------------- */
 
 function Tool({
@@ -125,11 +128,21 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       const ed = editorForSave ?? editorRef.current
       if (!ed) return
       try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        const body = JSON.stringify({
           savedAt: new Date().toISOString(),
           title, kind, charId, mature, cover, partners, atmo,
           json: ed.getJSON(),
-        }))
+        })
+        /* Раздувшийся черновик опаснее отсутствующего: при следующем открытии
+           редактор попытается его разобрать и положит вкладку ещё до первой
+           отрисовки. Самый длинный пост в проекте — десятки килобайт, так что
+           за этой границей документ уже не текст, а поломка. */
+        if (body.length > MAX_DRAFT) {
+          trace(`черновик раздулся до ${Math.round(body.length / 1024)} КБ — не сохраняю`)
+          localStorage.removeItem(DRAFT_KEY)
+          return
+        }
+        localStorage.setItem(DRAFT_KEY, body)
       } catch { /* localStorage может быть недоступен — просто не сохраняем */ }
     }, 1200)
   }
@@ -161,7 +174,12 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
-      if (raw) {
+      /* сначала длина строки — она ничего не разбирает и потому безопасна
+         при любом размере; разбирать гигантский черновик нельзя */
+      if (raw && raw.length > MAX_DRAFT) {
+        trace(`выброшен раздутый черновик, ${Math.round(raw.length / 1024)} КБ`)
+        localStorage.removeItem(DRAFT_KEY)
+      } else if (raw) {
         const d = JSON.parse(raw)
         /* Читать localStorage можно только после гидратации: на сервере его
            нет, и попытка узнать про черновик раньше даст расхождение разметки.
@@ -233,7 +251,14 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     if (!editor) return
     /* ВРЕМЕННОЕ: отмечаем открытие редактора и способ ввода — заодно видно,
        сработало ли определение пальцевого устройства на самом телефоне */
-    trace(`редактор открыт · ${isTouch ? 'палец' : 'мышь'} · сборка ${build ?? '—'}`)
+    {
+      let draftSize = 0
+      try { draftSize = (localStorage.getItem(DRAFT_KEY) || '').length } catch { /* ignore */ }
+      trace(
+        `редактор открыт · ${isTouch ? 'палец' : 'мышь'} · сборка ${build ?? '—'}` +
+        ` · черновик ${Math.round(draftSize / 1024)} КБ · узлов ${editor.state.doc.nodeSize}`,
+      )
+    }
     const w = window as unknown as { ggEditor?: unknown }
     w.ggEditor = editor
     return () => { delete w.ggEditor }
