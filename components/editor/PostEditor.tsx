@@ -32,6 +32,8 @@ export type MiniChar = {
 type Props = {
   mine: MiniChar[]
   all: MiniChar[]
+  /** ВРЕМЕННОЕ: короткий хэш коммита, из которого собран сайт. */
+  build?: string
   initial?: {
     id: string
     title: string
@@ -70,7 +72,7 @@ function Tool({
 
 /* ---------------- редактор ---------------- */
 
-export default function PostEditor({ mine, all, initial }: Props) {
+export default function PostEditor({ mine, all, initial, build }: Props) {
   const router = useRouter()
 
   const [title, setTitle]         = useState(initial?.title ?? '')
@@ -593,6 +595,8 @@ export default function PostEditor({ mine, all, initial }: Props) {
         </button>
         <span className="gg-editor__count">
           {wordCount} слов
+          {/* ВРЕМЕННОЕ: видно, какой код реально приехал на сайт */}
+          {build && <span className="faint"> · сборка {build}</span>}
         </span>
       </div>
 

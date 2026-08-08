@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import PostEditor, { type MiniChar } from '@/components/editor/PostEditor'
 import { editorContent } from '@/lib/tiptap/content'
+import { buildStamp } from '@/lib/build'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,7 @@ export default async function EditPost({
       <PostEditor
         mine={(mine ?? []) as MiniChar[]}
         all={(all ?? []) as MiniChar[]}
+        build={buildStamp()}
         initial={{
           id: post.id,
           title: post.title ?? '',

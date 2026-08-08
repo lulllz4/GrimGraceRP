@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import PostEditor, { type MiniChar } from '@/components/editor/PostEditor'
+import { buildStamp } from '@/lib/build'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,7 @@ export default async function NewPostPage() {
       <PostEditor
         mine={(mine ?? []) as MiniChar[]}
         all={(all ?? []) as MiniChar[]}
+        build={buildStamp()}
       />
     </div>
   )
