@@ -1994,6 +1994,35 @@ select.field { cursor: pointer }
 
 /* ---- панель ---- */
 
+/* ВРЕМЕННОЕ: сообщения ловца ошибок. Липнет к низу экрана, текст выделяется
+   пальцем, чтобы его можно было скопировать и прислать. */
+.gg-crash {
+  position: fixed;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 999;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--crimson-lt);
+  border-radius: var(--r);
+  background: #1a0d0f;
+  color: #f2d9d9;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.gg-crash button {
+  margin-top: 0.4rem;
+  background: none;
+  border: 1px solid var(--crimson-lt);
+  border-radius: var(--r);
+  color: inherit;
+  font: inherit;
+  padding: 0.15rem 0.5rem;
+}
+
 /* ---- всплывающие панели редактора ----
    Постоянной панели больше нет: инструменты приходят туда, где рука.
    Коробка только у самой всплывашки — она обязана отделяться от текста. */

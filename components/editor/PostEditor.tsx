@@ -11,6 +11,7 @@ import Image from '@tiptap/extension-image'
 import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
 import { shrinkImage } from '@/lib/image'
+import CrashCatcher from '@/components/editor/CrashCatcher'
 
 import { Plashka } from '@/lib/tiptap/plashka'
 import { SceneHeader, SceneDivider, DiceRoll } from '@/lib/tiptap/nodes'
@@ -334,6 +335,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           <button type="button" className="gg-btn gg-btn--ghost" onClick={dismissDraft}>Не нужно</button>
         </div>
       )}
+
+      {/* ВРЕМЕННОЕ: ловец ошибок и зависаний — на телефоне консоли нет */}
+      <CrashCatcher />
 
       {/* ============ заголовок ============ */}
       <input
