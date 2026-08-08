@@ -1970,14 +1970,6 @@ select.field { cursor: pointer }
 .gg-editor__title:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
 .gg-editor__title::placeholder { color: var(--bone-faint); }
 
-.gg-editor__byline {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  margin: 1rem 0 1.5rem;
-}
-
 .gg-editor__elem {
   font-size: 0.65rem;
   letter-spacing: 0.2em;
@@ -2060,43 +2052,41 @@ select.field { cursor: pointer }
   background: color-mix(in srgb, var(--accent, var(--crimson)) 10%, transparent);
 }
 
-/* строка разделов: не коробка, а тихая линия ссылок над холстом */
-.gg-tabs {
+/* Единственная служебная строка над текстом: слева кто пишет, справа
+   оформление. Без рамки и без линейки — линейка тут читалась бы как
+   очередная полоса интерфейса. */
+.gg-editor__line {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  gap: 1.1rem;
-  margin: 1.6rem 0 0.6rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--line);
+  margin: 0.9rem 0 3.2rem;
 }
 
-/* что сейчас выбрано в оформлении — справа, не крича */
-.gg-tabs__now {
-  margin-left: auto;
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--bone-faint);
-}
-
-.gg-tab {
+.gg-editor__who {
   background: none;
   border: none;
+  padding: 0;
   cursor: pointer;
   font-family: inherit;
   font-size: 0.68rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--bone-faint);
-  padding: 0.3rem 0.2rem;
-  border-bottom: 1px solid transparent;
+  transition: color 0.2s;
+  text-align: left;
 }
-.gg-tab:hover { color: var(--bone); }
-.gg-tab[data-on] {
-  color: var(--accent, var(--crimson-lt));
-  border-bottom-color: var(--accent, var(--crimson-lt));
+.gg-editor__who:hover { color: var(--bone); }
+.gg-editor__who[data-on] { color: var(--accent, var(--crimson-lt)); }
+
+/* точки-разделители внутри строки — тише самого текста */
+.gg-editor__who i {
+  font-style: normal;
+  margin: 0 0.5rem;
+  opacity: 0.5;
 }
+
 
 /* ---- выдвижной ящик ---- */
 
@@ -2243,15 +2233,17 @@ select.field { cursor: pointer }
 /* ---- холст ---- */
 
 /* Холст — не коробка, а страница: ни рамки, ни своей заливки.
-   Фон приходит от материала оформления, а если его нет — просто фон сайта. */
+   Высота — во весь экран: лист не должен упираться в дно раньше, чем текст.
+   Нижний отступ большой намеренно — под курсором всегда остаётся воздух,
+   и последняя строка не липнет к краю окна. */
 .gg-canvas {
-  padding: 1rem 0 6rem;
-  min-height: 60vh;
+  padding: 0 0 45vh;
+  min-height: 82vh;
 }
 
 /* когда материал выбран, странице нужны поля, иначе бумага режется по тексту */
 .gg-canvas.gg-atmo {
-  padding: 2.4rem 2rem 6rem;
+  padding: 3rem 2.4rem 45vh;
   border-radius: var(--r);
 }
 
@@ -2544,8 +2536,10 @@ select.field { cursor: pointer }
   .gg-indent-all .gg-prose > p + p { text-indent: 1.4em; }
 
   .gg-canvas.gg-atmo { padding: 1.4rem 1.1rem 4rem; }
-  .gg-tabs { gap: 0.8rem; }
-  .gg-tab { padding: 0.55rem 0.5rem; }
+  /* на телефоне служебная строка встаёт в две строки — так читабельнее,
+     чем ужимать её в одну */
+  .gg-editor__line { gap: 0.5rem; margin-bottom: 2.2rem; }
+  .gg-editor__who i { margin: 0 0.35rem; }
   .gg-chip { padding: 0.55rem 0.85rem; }
   .gg-plashka__kill { padding: 0.4rem 0.5rem; font-size: 0.95rem; }
 

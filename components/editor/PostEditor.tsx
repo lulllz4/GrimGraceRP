@@ -95,7 +95,8 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   const [cover, setCover]         = useState(initial?.coverUrl ?? '')
   const [partners, setPartners]   = useState<string[]>(initial?.partnerIds ?? [])
   const [atmo, setAtmo]           = useState<Atmosphere>(initial?.atmosphere ?? EMPTY_ATMOSPHERE)
-  const [panel, setPanel]         = useState<'blocks' | 'partners' | 'meta' | 'atmo' | null>('blocks')
+  /* по умолчанию не открыто ничего: страница должна встречать чистым листом */
+  const [panel, setPanel]         = useState<'blocks' | 'post' | 'atmo' | null>(null)
   const [busy, setBusy]           = useState(false)
   const [err, setErr]             = useState('')
   const [search, setSearch]       = useState('')
@@ -343,54 +344,30 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         maxLength={200}
       />
 
-      {/* ============ строка автора ============ */}
-      <div className="gg-editor__byline">
-        <select
-          value={charId}
-          onChange={(e) => setCharId(e.target.value)}
-          className="gg-select"
+      {/* ====== одна тихая строка вместо трёх полос интерфейса ======
+          Слева — кто и что пишет, справа — оформление. Обе половины
+          открывают свою панель; больше между автором и текстом ничего нет. */}
+      <div className="gg-editor__line">
+        <button
+          type="button"
+          className="gg-editor__who"
+          data-on={panel === 'post' ? '' : undefined}
+          onClick={() => setPanel(panel === 'post' ? null : 'post')}
         >
-          {mine.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+          {mine.find((c) => c.id === charId)?.name ?? 'Выберите персонажа'}
+          <i>·</i>{POST_KINDS[kind] ?? kind}
+          {partners.length > 0 && <><i>·</i>с соигроками ({partners.length})</>}
+          {mature && <><i>·</i>18+</>}
+        </button>
 
-        <select
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-          className="gg-select"
+        <button
+          type="button"
+          className="gg-editor__who"
+          data-on={panel === 'atmo' ? '' : undefined}
+          onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}
         >
-          {Object.entries(POST_KINDS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-
-        <span className="gg-editor__elem">
-          {ELEMENTS[element as keyof typeof ELEMENTS]?.label}
-        </span>
-      </div>
-
-      {/* ============ разделы — тихой строкой, без коробки ============ */}
-      <div className="gg-tabs">
-        <button type="button" className="gg-tab" data-on={panel === 'blocks' ? '' : undefined}
-                onClick={() => setPanel(panel === 'blocks' ? null : 'blocks')}>
-          Плашки
+          {MATERIALS[atmo.material].label}<i>·</i>{SETS[atmo.set].label}
         </button>
-        <button type="button" className="gg-tab" data-on={panel === 'partners' ? '' : undefined}
-                onClick={() => setPanel(panel === 'partners' ? null : 'partners')}>
-          Соигроки {partners.length > 0 && `(${partners.length})`}
-        </button>
-        <button type="button" className="gg-tab" data-on={panel === 'atmo' ? '' : undefined}
-                onClick={() => setPanel(panel === 'atmo' ? null : 'atmo')}>
-          Оформление
-        </button>
-        <button type="button" className="gg-tab" data-on={panel === 'meta' ? '' : undefined}
-                onClick={() => setPanel(panel === 'meta' ? null : 'meta')}>
-          Обложка и метки
-        </button>
-        <span className="gg-tabs__now">
-          {MATERIALS[atmo.material].label} · {SETS[atmo.set].label}
-        </span>
       </div>
 
       {/* ====== панель по выделению: появляется там, где работает рука ====== */}
@@ -575,15 +552,47 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         </div>
       )}
 
-      {/* ============ соигроки ============ */}
-      {panel === 'partners' && (
+      {/* ============ о записи: кто, что, с кем, обложка ============ */}
+      {panel === 'post' && (
         <div className="gg-drawer">
-          <input
-            className="gg-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Искать персонажа…"
-          />
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">От чьего лица</div>
+            <div className="gg-drawer__grid gg-drawer__grid--mid">
+              <select
+                value={charId}
+                onChange={(e) => setCharId(e.target.value)}
+                className="gg-select"
+              >
+                {mine.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+
+              <select
+                value={kind}
+                onChange={(e) => setKind(e.target.value)}
+                className="gg-select"
+              >
+                {Object.entries(POST_KINDS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+
+              <span className="gg-editor__elem">
+                {ELEMENTS[element as keyof typeof ELEMENTS]?.label}
+              </span>
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Соигроки</div>
+            <input
+              className="gg-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Искать персонажа…"
+            />
+          </div>
           <div className="gg-drawer__grid gg-drawer__grid--wide">
             {filtered.map((c) => {
               const on = partners.includes(c.id)
@@ -605,6 +614,26 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
               )
             })}
           </div>
+
+          <label className="gg-field">
+            <span>Ссылка на обложку</span>
+            <input
+              className="gg-input"
+              value={cover}
+              onChange={(e) => setCover(e.target.value)}
+              placeholder="https://…"
+            />
+            <small>Необязательно. Пока — прямая ссылка на картинку.</small>
+          </label>
+
+          <label className="gg-check">
+            <input
+              type="checkbox"
+              checked={mature}
+              onChange={(e) => setMature(e.target.checked)}
+            />
+            <span>Содержимое 18+ — размывать в ленте</span>
+          </label>
         </div>
       )}
 
@@ -814,31 +843,6 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
               onChange={(e) => setAtmo({ ...atmo, indentAll: e.target.checked })}
             />
             <span>Красная строка во всём посте — как в книге</span>
-          </label>
-        </div>
-      )}
-
-      {/* ============ обложка и метки ============ */}
-      {panel === 'meta' && (
-        <div className="gg-drawer gg-drawer--form">
-          <label className="gg-field">
-            <span>Ссылка на обложку</span>
-            <input
-              className="gg-input"
-              value={cover}
-              onChange={(e) => setCover(e.target.value)}
-              placeholder="https://…"
-            />
-            <small>Необязательно. Пока — прямая ссылка на картинку.</small>
-          </label>
-
-          <label className="gg-check">
-            <input
-              type="checkbox"
-              checked={mature}
-              onChange={(e) => setMature(e.target.checked)}
-            />
-            <span>Содержимое 18+ — размывать в ленте</span>
           </label>
         </div>
       )}
