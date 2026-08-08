@@ -114,7 +114,7 @@ export default async function PostPage({
       {post.cover_url && (
         <div className="gg-post__cover">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.cover_url} alt="" />
+          <img src={post.cover_url} alt="" decoding="async" />
         </div>
       )}
 

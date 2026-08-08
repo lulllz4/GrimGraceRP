@@ -16,7 +16,7 @@ export default async function Header() {
           <span className="gg-brand__rule">
             <i /> <b>❦</b> <i />
           </span>
-          <span className="gg-brand__sub">Лондон · 1852</span>
+          <span className="gg-brand__sub">Лондон · MDCCCLXXXVIII</span>
         </Link>
       </div>
 

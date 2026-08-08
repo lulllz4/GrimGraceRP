@@ -41,7 +41,7 @@ export default function PostCard({ p }: { p: FeedPost }) {
       {p.cover_url && (
         <Link href={`/p/${p.id}`} className="gg-card__cover" data-veiled={!open ? '' : undefined}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.cover_url} alt="" />
+          <img src={p.cover_url} alt="" loading="lazy" decoding="async" />
         </Link>
       )}
 

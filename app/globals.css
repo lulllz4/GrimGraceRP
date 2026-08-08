@@ -821,14 +821,19 @@ select.field { cursor: pointer }
   border: 1px solid var(--line);
 }
 
-/* буквица — первый абзац поста при чтении (не в редакторе) */
-.gg-prose--read > p:first-child::first-letter {
+/* буквица и отступ — теперь ставятся автором вручную (кнопками в тулбаре),
+   не автоматически по всему посту */
+.gg-prose p.gg-dropcap::first-letter {
   font-family: var(--font-drop);
   float: left;
   font-size: 4.1rem;
   line-height: .82;
   padding: .1em .12em 0 0;
   color: var(--accent);
+}
+
+.gg-prose p.gg-indent {
+  text-indent: 1.9em;
 }
 
 .gg-prose p.is-editor-empty:first-child::before {
@@ -1675,11 +1680,24 @@ select.field { cursor: pointer }
 /* ---- разделитель ---- */
 
 .gg-div {
-  margin: 2.6rem 0;
-  text-align: center;
+  margin: 3rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
   color: var(--accent, var(--bone-faint));
-  font-size: 1.1rem;
-  letter-spacing: 0.5em;
+  font-size: 1.15rem;
+}
+.gg-div::before,
+.gg-div::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 75%, transparent) 50%,
+    transparent
+  );
 }
 
 .gg-div--edit {
@@ -2258,4 +2276,34 @@ select.field { cursor: pointer }
   .gg-tab { padding: 0.55rem 0.5rem; }
   .gg-chip { padding: 0.55rem 0.85rem; }
   .gg-plashka__kill { padding: 0.4rem 0.5rem; font-size: 0.95rem; }
+
+  /* ---- телефон реально лагает на "backdrop-filter: blur" в липкой шапке:
+     она пересчитывает размытие на КАЖДЫЙ кадр прокрутки — самая частая
+     причина подтормаживания на слабых телефонах. Убираем размытие,
+     оставляем плотный полупрозрачный фон — визуально почти то же самое. */
+  .site-head {
+    backdrop-filter: none;
+    background: rgba(11, 11, 13, .96);
+  }
+
+  /* ---- drop-shadow на плашках с вырезанным clip-path (телеграмма, газета,
+     афиша, приглашение, досье, некролог, конверт письма) — самый дорогой
+     фильтр для мобильного GPU, особенно когда таких плашек в ленте много.
+     На телефоне убираем совсем: контраст с фоном и так виден. */
+  .gg-plashka,
+  .gg-plashka--letter {
+    filter: none !important;
+  }
+
+  /* ---- размытие спойлера и возрастной плашки — оставляем эффект,
+     но дешевле по радиусу */
+  .gg-plashka[data-variant='spoiler'] .gg-plashka__body { filter: blur(3px); }
+  .gg-card__cover[data-veiled] img { filter: blur(7px) saturate(0.4); }
+  .gg-card__excerpt[data-veiled] { filter: blur(3px); }
+
+  /* ---- плавная анимация раскрытия письма (::details-content) — тоже
+     недешёвая на слабом телефоне; на мобильном пусть просто открывается */
+  .gg-plashka--letter::details-content {
+    transition: none !important;
+  }
 }
