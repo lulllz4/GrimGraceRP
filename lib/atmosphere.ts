@@ -75,18 +75,56 @@ export const BACKDROP_LIST = Object.keys(BACKDROPS) as BackdropKey[]
 
 export type Atmosphere = {
   backdrop: BackdropKey
+  /** свой цвет страницы, #rrggbb — перебивает готовый фон */
+  bgColor: string | null
+  /** картинка фоном, ссылка из нашего хранилища — перебивает и цвет, и фон */
+  bgImage: string | null
   /** #rrggbb — перебивает и элемент персонажа, и его личную тему */
   accent: string | null
   /** шрифт заголовков поста */
   font: ThemeFontKey | null
   vignette: boolean
+  /** светлая гамма: тёмный текст по светлой странице */
+  light: boolean
+  /** книжная красная строка во всём посте */
+  indentAll: boolean
 }
 
 export const EMPTY_ATMOSPHERE: Atmosphere = {
   backdrop: 'none',
+  bgColor: null,
+  bgImage: null,
   accent: null,
   font: null,
   vignette: false,
+  light: false,
+  indentAll: false,
+}
+
+/** Светлая гамма — те же переменные, что и у тёмной, только наоборот. */
+const LIGHT_INK: Record<string, string> = {
+  '--bone': '#2b2620',
+  '--bone-dim': '#5c554a',
+  '--bone-faint': '#847c6e',
+  '--line': '#cec6b6',
+  '--panel': '#efe9dd',
+  '--ink': '#f5f0e6',
+  '--ink-2': '#efe9dd',
+}
+
+/** Страница по умолчанию для светлой гаммы, если фон не выбран отдельно. */
+const LIGHT_PAGE = 'linear-gradient(180deg, #f7f3ea 0%, #efe8db 100%)'
+
+/**
+ * Ссылка на картинку годится, только если она из нашего хранилища и не
+ * содержит символов, которыми можно выскочить из url(...) в инлайн-стиле.
+ * Проверяется и на клиенте, и на сервере.
+ */
+export function isSafeImageUrl(url: string): boolean {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!base) return false
+  if (!url.startsWith(`${base}/storage/v1/object/public/`)) return false
+  return !/["'()\\\s]/.test(url)
 }
 
 /**
@@ -106,17 +144,30 @@ export function normalizeAtmosphere(raw: unknown): Atmosphere | null {
   const accent =
     typeof r.accent === 'string' && isValidHexColor(r.accent) ? r.accent : null
 
+  const bgColor =
+    typeof r.bgColor === 'string' && isValidHexColor(r.bgColor) ? r.bgColor : null
+
+  const bgImage =
+    typeof r.bgImage === 'string' && isSafeImageUrl(r.bgImage) ? r.bgImage : null
+
   const font =
     typeof r.font === 'string' && r.font in THEME_FONTS
       ? (r.font as ThemeFontKey)
       : null
 
   const vignette = r.vignette === true
+  const light = r.light === true
+  const indentAll = r.indentAll === true
 
   /* ничего не выбрано — не занимаем колонку пустышкой */
-  if (backdrop === 'none' && !accent && !font && !vignette) return null
+  if (
+    backdrop === 'none' && !accent && !bgColor && !bgImage &&
+    !font && !vignette && !light && !indentAll
+  ) {
+    return null
+  }
 
-  return { backdrop, accent, font, vignette }
+  return { backdrop, bgColor, bgImage, accent, font, vignette, light, indentAll }
 }
 
 /** Инлайн-стиль: переменные, которые разбирает CSS класса .gg-atmo. */
@@ -124,10 +175,26 @@ export function atmosphereStyle(a: Atmosphere | null | undefined): Record<string
   if (!a) return {}
   const style: Record<string, string> = {}
 
+  if (a.light) Object.assign(style, LIGHT_INK)
+
   const backdrop = BACKDROPS[a.backdrop] ?? BACKDROPS.none
-  if (a.backdrop !== 'none') {
+
+  /* что сильнее: картинка → свой цвет → готовый фон */
+  if (a.bgImage && isSafeImageUrl(a.bgImage)) {
+    /* поверх картинки кладём вуаль, иначе текст на ней не прочесть.
+       Никакого background-attachment: fixed — на телефоне это убийца. */
+    const veil = a.light ? 'rgba(245,240,230,.72)' : 'rgba(8,8,10,.62)'
+    style['--post-bg'] =
+      `linear-gradient(${veil}, ${veil}), url("${a.bgImage}") center / cover no-repeat`
+    style['--post-haze'] = 'transparent'
+  } else if (a.bgColor && isValidHexColor(a.bgColor)) {
+    style['--post-bg'] = a.bgColor
+    style['--post-haze'] = a.backdrop !== 'none' ? backdrop.haze : 'transparent'
+  } else if (a.backdrop !== 'none') {
     style['--post-bg'] = backdrop.bg
     style['--post-haze'] = backdrop.haze
+  } else if (a.light) {
+    style['--post-bg'] = LIGHT_PAGE
   }
 
   if (a.accent && isValidHexColor(a.accent)) {

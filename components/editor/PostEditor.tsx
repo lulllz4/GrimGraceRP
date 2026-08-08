@@ -98,7 +98,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
   const [search, setSearch]       = useState('')
   const [imgBusy, setImgBusy]     = useState(false)
   const [imgErr, setImgErr]       = useState('')
+  const [bgBusy, setBgBusy]       = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bgInputRef = useRef<HTMLInputElement>(null)
 
   /* ---------- автосохранение в браузере ---------- */
   const DRAFT_KEY = `gg-draft:${initial?.id ?? 'new'}`
@@ -280,6 +282,26 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     editor.chain().focus().setImage({ src: res.url }).run()
   }
 
+  async function handleBackgroundFile(file: File | undefined) {
+    if (!file || bgBusy) return
+    setImgErr('')
+    setBgBusy(true)
+
+    const fd = new FormData()
+    /* фон растягивается на всю страницу — ему нужна сторона побольше */
+    fd.append('file', await shrinkImage(file, 2000))
+    const res = await uploadPostImage(fd)
+
+    setBgBusy(false)
+    if (bgInputRef.current) bgInputRef.current.value = ''
+
+    if (!res.ok) {
+      setImgErr(res.error)
+      return
+    }
+    setAtmo({ ...atmo, bgImage: res.url })
+  }
+
   function handleCancel() {
     const hasText = editor ? editor.getText().trim().length > 0 : false
     const hasChanges = title.trim().length > 0 || hasText
@@ -420,14 +442,10 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
 
           <span className="gg-bar__sep" />
 
-          <Tool title="Меньше отступ (Ctrl+[)"
-                onClick={() => editor?.chain().focus().indentLess().run()}>
-            ⇇
-          </Tool>
-          <Tool title="Больше отступ (Ctrl+])"
-                on={Number(editor?.getAttributes('paragraph').indent ?? 0) > 0}
-                onClick={() => editor?.chain().focus().indentMore().run()}>
-            ⇉
+          <Tool title="Красная строка (Ctrl+])"
+                on={editor?.isActive('paragraph', { indent: true })}
+                onClick={() => editor?.chain().focus().toggleIndent().run()}>
+            ⇥
           </Tool>
           <Tool title="Буквица" on={editor?.isActive('paragraph', { dropcap: true })}
                 onClick={() => editor?.chain().focus().toggleDropcap().run()}>
@@ -604,6 +622,67 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           </div>
 
           <div className="gg-drawer__group">
+            <div className="gg-drawer__label">Своя страница</div>
+            <div className="gg-drawer__grid gg-drawer__grid--mid">
+              <input
+                type="color"
+                className="gg-color"
+                value={atmo.bgColor ?? (atmo.light ? '#f5f0e6' : '#0b0b0d')}
+                onChange={(e) => setAtmo({ ...atmo, bgColor: e.target.value })}
+                title="Свой цвет страницы"
+              />
+              {atmo.bgColor && (
+                <button
+                  type="button"
+                  className="gg-chip"
+                  onClick={() => setAtmo({ ...atmo, bgColor: null })}
+                >
+                  Убрать цвет
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="gg-chip"
+                disabled={bgBusy}
+                onClick={() => bgInputRef.current?.click()}
+              >
+                {bgBusy ? 'Загружаю…' : atmo.bgImage ? 'Заменить картинку' : 'Картинка фоном'}
+              </button>
+              {atmo.bgImage && (
+                <button
+                  type="button"
+                  className="gg-chip"
+                  onClick={() => setAtmo({ ...atmo, bgImage: null })}
+                >
+                  Убрать картинку
+                </button>
+              )}
+              <input
+                ref={bgInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => handleBackgroundFile(e.target.files?.[0])}
+              />
+
+              <label className="gg-check">
+                <input
+                  type="checkbox"
+                  checked={atmo.light}
+                  onChange={(e) => setAtmo({ ...atmo, light: e.target.checked })}
+                />
+                <span>Светлая гамма — тёмный текст по светлой странице</span>
+              </label>
+
+              <small className="gg-hint">
+                Что сильнее: картинка, потом свой цвет, потом готовый фон.
+                Поверх картинки ложится вуаль, иначе текст на ней не прочесть.
+              </small>
+            </div>
+          </div>
+
+          <div className="gg-drawer__group">
             <div className="gg-drawer__label">Цвет акцента</div>
             <div className="gg-drawer__grid gg-drawer__grid--mid">
               <input
@@ -660,6 +739,15 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
             />
             <span>Затемнить края — как свет лампы посреди комнаты</span>
           </label>
+
+          <label className="gg-check">
+            <input
+              type="checkbox"
+              checked={atmo.indentAll}
+              onChange={(e) => setAtmo({ ...atmo, indentAll: e.target.checked })}
+            />
+            <span>Красная строка во всём посте — как в книге</span>
+          </label>
         </div>
       )}
 
@@ -691,8 +779,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       {/* ============ холст ============ */}
       {/* атмосфера видна прямо во время письма, а не только у читателя */}
       <div
-        className="gg-canvas gg-atmo"
+        className={`gg-canvas gg-atmo${atmo.indentAll ? ' gg-indent-all' : ''}`}
         data-vignette={atmo.vignette ? '' : undefined}
+        data-light={atmo.light ? '' : undefined}
         style={atmosphereStyle(atmo) as React.CSSProperties}
       >
         <EditorContent editor={editor} />

@@ -5,22 +5,18 @@ import { Extension } from '@tiptap/core'
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     ggFormat: {
-      indentMore: () => ReturnType
-      indentLess: () => ReturnType
+      toggleIndent: () => ReturnType
       toggleDropcap: () => ReturnType
     }
   }
 }
 
-/** Докуда можно отодвигать абзац — дальше на телефоне не останется строки. */
-export const MAX_INDENT = 4
-
 /**
- * Отступ абзаца и буквица — ставятся автором вручную на конкретный
- * абзац, кнопками в тулбаре, а не автоматически по всему посту.
+ * Красная строка и буквица.
  *
- * Отступ — это сдвиг всего абзаца от левого края (ступенями), а не красная
- * строка: так автор может отбивать реплики, вложенные мысли и цитаты.
+ * Отступ — книжный: сдвигается только первая строка абзаца, чтобы абзацы
+ * не сливались в сплошное полотно. Кнопка ставит его на текущий абзац;
+ * на весь пост сразу включается в «Оформлении» (atmosphere.indentAll).
  */
 export const IndentDropcap = Extension.create({
   name: 'ggFormat',
@@ -31,15 +27,12 @@ export const IndentDropcap = Extension.create({
         types: ['paragraph'],
         attributes: {
           indent: {
-            default: 0,
-            parseHTML: (el) => {
-              const step = el.className.match(/gg-indent-(\d)/)
-              if (step) return Math.min(Number(step[1]), MAX_INDENT)
-              /* старая разметка: отступ был просто «есть/нет» */
-              return el.classList.contains('gg-indent') ? 1 : 0
-            },
-            renderHTML: (attrs) =>
-              attrs.indent ? { class: `gg-indent-${attrs.indent}` } : {},
+            default: false,
+            /* gg-indent-N — короткоживущая разметка ступенчатого отступа,
+               читаем её как обычную красную строку */
+            parseHTML: (el) =>
+              el.classList.contains('gg-indent') || /gg-indent-\d/.test(el.className),
+            renderHTML: (attrs) => (attrs.indent ? { class: 'gg-indent' } : {}),
           },
           dropcap: {
             default: false,
@@ -53,19 +46,11 @@ export const IndentDropcap = Extension.create({
 
   addCommands() {
     return {
-      indentMore:
+      toggleIndent:
         () =>
         ({ editor, commands }) => {
-          const now = Number(editor.getAttributes('paragraph').indent ?? 0)
-          if (now >= MAX_INDENT) return false
-          return commands.updateAttributes('paragraph', { indent: now + 1 })
-        },
-      indentLess:
-        () =>
-        ({ editor, commands }) => {
-          const now = Number(editor.getAttributes('paragraph').indent ?? 0)
-          if (now <= 0) return false
-          return commands.updateAttributes('paragraph', { indent: now - 1 })
+          const isActive = editor.isActive('paragraph', { indent: true })
+          return commands.updateAttributes('paragraph', { indent: !isActive })
         },
       toggleDropcap:
         () =>
@@ -76,12 +61,10 @@ export const IndentDropcap = Extension.create({
     }
   },
 
-  /* Tab здесь занят списками, поэтому берём привычные по текстовым
-     редакторам Ctrl+] и Ctrl+[ */
+  /* Tab здесь занят списками, поэтому берём Ctrl+] */
   addKeyboardShortcuts() {
     return {
-      'Mod-]': () => this.editor.commands.indentMore(),
-      'Mod-[': () => this.editor.commands.indentLess(),
+      'Mod-]': () => this.editor.commands.toggleIndent(),
     }
   },
 })

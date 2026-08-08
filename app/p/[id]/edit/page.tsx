@@ -44,8 +44,10 @@ export default async function EditPost({
     .select('character_id')
     .eq('post_id', id)
 
+  /* ширина .wrap — та же, что у опубликованного поста: текст должен ложиться
+     в редакторе ровно так же, как его увидит читатель */
   return (
-    <main className="mx-auto max-w-3xl px-5 py-12">
+    <main className="wrap" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
       <p className="eyebrow mb-6">Правка записи</p>
       <PostEditor
         mine={(mine ?? []) as MiniChar[]}
