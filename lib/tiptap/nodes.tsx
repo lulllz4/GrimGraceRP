@@ -6,13 +6,13 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react'
-import { DIVIDERS } from '@/lib/blocks'
+import { DIVIDERS, DIVIDER_KINDS, ORNAMENT, type DividerVariant } from '@/lib/blocks'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     ggNodes: {
       insertSceneHeader: () => ReturnType
-      insertDivider: (symbol: string) => ReturnType
+      insertDivider: (variant: DividerVariant, symbol?: string) => ReturnType
       insertDice: () => ReturnType
     }
   }
@@ -114,21 +114,49 @@ export const SceneHeader = Node.create({
 /* ==================== РАЗДЕЛИТЕЛЬ ==================== */
 
 function DividerView({ node, updateAttributes, deleteNode }: NodeViewProps) {
+  const variant = (node.attrs.variant as DividerVariant) || 'symbol'
   const current = (node.attrs.symbol as string) || '❦'
+
   return (
-    <NodeViewWrapper className="gg-div gg-div--edit" contentEditable={false}>
+    <NodeViewWrapper
+      className="gg-div gg-div--edit"
+      data-variant={variant}
+      contentEditable={false}
+    >
       <span className="gg-div__line" />
       <span className="gg-div__pick">
-        {Object.entries(DIVIDERS).map(([key, sym]) => (
-          <button
-            key={key}
-            type="button"
-            data-on={sym === current ? '' : undefined}
-            onClick={() => updateAttributes({ symbol: sym })}
-          >
-            {sym}
-          </button>
-        ))}
+        {/* сперва вид разделителя */}
+        {(Object.entries(DIVIDER_KINDS) as [DividerVariant, { label: string; icon: string }][])
+          .map(([key, def]) => (
+            <button
+              key={key}
+              type="button"
+              className="gg-div__kind"
+              title={def.label}
+              data-on={key === variant ? '' : undefined}
+              onClick={() => updateAttributes({ variant: key })}
+            >
+              {def.icon}
+            </button>
+          ))}
+
+        {/* символ выбирается только у соответствующего вида */}
+        {variant === 'symbol' && (
+          <>
+            <span className="gg-div__sep" />
+            {Object.entries(DIVIDERS).map(([key, sym]) => (
+              <button
+                key={key}
+                type="button"
+                data-on={sym === current ? '' : undefined}
+                onClick={() => updateAttributes({ symbol: sym })}
+              >
+                {sym}
+              </button>
+            ))}
+          </>
+        )}
+
         <button type="button" className="gg-div__kill" onClick={() => deleteNode()}>
           ✕
         </button>
@@ -146,6 +174,11 @@ export const SceneDivider = Node.create({
 
   addAttributes() {
     return {
+      /* старые разделители сохранялись без вида — они все были «символом» */
+      variant: {
+        default: 'symbol',
+        parseHTML: (el) => el.getAttribute('data-variant') || 'symbol',
+      },
       symbol: { default: '❦', parseHTML: (el) => el.getAttribute('data-symbol') || '❦' },
     }
   },
@@ -155,10 +188,23 @@ export const SceneDivider = Node.create({
   },
 
   renderHTML({ node }) {
+    const variant = (node.attrs.variant as DividerVariant) || 'symbol'
+    const symbol = (node.attrs.symbol as string) || '❦'
+
+    const attrs: Record<string, string> = {
+      class: `gg-div gg-div--${variant}`,
+      'data-variant': variant,
+    }
+
+    /* чистая полоса — пустой узел, линию рисует CSS */
+    if (variant === 'line') return ['div', attrs] as never
+
+    if (variant === 'symbol') attrs['data-symbol'] = symbol
+
     return [
       'div',
-      { class: 'gg-div', 'data-symbol': node.attrs.symbol },
-      ['span', {}, node.attrs.symbol],
+      attrs,
+      ['span', { class: 'gg-div__mark' }, variant === 'ornament' ? ORNAMENT : symbol],
     ] as never
   },
 
@@ -169,9 +215,9 @@ export const SceneDivider = Node.create({
   addCommands() {
     return {
       insertDivider:
-        (symbol) =>
+        (variant, symbol = '❦') =>
         ({ chain }) =>
-          chain().focus().insertContent({ type: this.name, attrs: { symbol } }).run(),
+          chain().focus().insertContent({ type: this.name, attrs: { variant, symbol } }).run(),
     }
   },
 })

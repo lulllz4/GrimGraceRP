@@ -9,11 +9,12 @@ import TextAlign from '@tiptap/extension-text-align'
 import Image from '@tiptap/extension-image'
 import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
+import { shrinkImage } from '@/lib/image'
 
 import { Plashka } from '@/lib/tiptap/plashka'
 import { SceneHeader, SceneDivider, DiceRoll } from '@/lib/tiptap/nodes'
 import { Speech, Thought, Whisper, Shout } from '@/lib/tiptap/marks'
-import { BLOCK_GROUPS, BLOCKS, DIVIDERS, POST_KINDS, type BlockKey } from '@/lib/blocks'
+import { BLOCK_GROUPS, BLOCKS, DIVIDERS, DIVIDER_KINDS, POST_KINDS, type BlockKey } from '@/lib/blocks'
 import { savePost } from '@/lib/actions/posts'
 import { ELEMENTS, characterThemeStyle } from '@/lib/elements'
 
@@ -254,7 +255,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     setImgBusy(true)
 
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', await shrinkImage(file))
     const res = await uploadPostImage(fd)
 
     setImgBusy(false)
@@ -487,12 +488,29 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           <div className="gg-drawer__group">
             <div className="gg-drawer__label">Разделители</div>
             <div className="gg-drawer__grid">
+              <button
+                type="button"
+                className="gg-chip gg-chip--sym gg-chip--wide"
+                title="Чистая полоса"
+                onClick={() => editor?.chain().focus().insertDivider('line').run()}
+              >
+                {DIVIDER_KINDS.line.icon}
+              </button>
+              <button
+                type="button"
+                className="gg-chip gg-chip--sym gg-chip--wide"
+                title="Полоса с орнаментом"
+                onClick={() => editor?.chain().focus().insertDivider('ornament').run()}
+              >
+                {DIVIDER_KINDS.ornament.icon}
+              </button>
               {Object.entries(DIVIDERS).map(([key, sym]) => (
                 <button
                   key={key}
                   type="button"
                   className="gg-chip gg-chip--sym"
-                  onClick={() => editor?.chain().focus().insertDivider(sym).run()}
+                  title="Полоса с символом"
+                  onClick={() => editor?.chain().focus().insertDivider('symbol', sym).run()}
                 >
                   {sym}
                 </button>

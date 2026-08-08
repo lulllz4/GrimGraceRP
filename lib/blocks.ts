@@ -133,7 +133,7 @@ export const BLOCK_GROUPS: Array<{ label: string; items: BlockKey[] }> = [
 
 export const BLOCK_KEYS = Object.keys(BLOCKS) as BlockKey[]
 
-/** Разделители сцен. */
+/** Разделители сцен: символ в разрыве полосы. */
 export const DIVIDERS: Record<string, string> = {
   fleuron: '❦',
   star:    '✦',
@@ -143,6 +143,18 @@ export const DIVIDERS: Record<string, string> = {
   bat:     '🦇',
   rose:    '❧',
 }
+
+/** Виды разделителя: чистая полоса, полоса с символом, полоса с орнаментом. */
+export const DIVIDER_KINDS = {
+  line:     { label: 'Полоса',   icon: '─────' },
+  symbol:   { label: 'Символ',   icon: '❦' },
+  ornament: { label: 'Орнамент', icon: '◈ ◈ ◈' },
+} as const
+
+export type DividerVariant = keyof typeof DIVIDER_KINDS
+
+/** Глифы орнамента — рисуются в разрыве полосы. */
+export const ORNAMENT = '◈ ◈ ◈'
 
 /** Виды постов. */
 export const POST_KINDS: Record<string, string> = {

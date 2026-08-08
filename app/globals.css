@@ -1680,13 +1680,17 @@ select.field { cursor: pointer }
 /* ---- разделитель ---- */
 
 .gg-div {
-  margin: 3rem 0;
+  margin: 3.2rem 0;
   display: flex;
   align-items: center;
-  gap: 1.4rem;
+  gap: 1.2rem;
   color: var(--accent, var(--bone-faint));
-  font-size: 1.15rem;
+  font-size: 1.3rem;
+  line-height: 1;
 }
+
+/* полоса держит цвет почти по всей длине и гаснет только у самых краёв —
+   так она читается как черта, а не как блик */
 .gg-div::before,
 .gg-div::after {
   content: '';
@@ -1695,9 +1699,37 @@ select.field { cursor: pointer }
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--accent, var(--bone-faint)) 75%, transparent) 50%,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 85%, transparent) 18%,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 85%, transparent) 82%,
     transparent
   );
+}
+
+.gg-div__mark {
+  display: inline-block;
+  padding: 0 0.15em;
+}
+
+/* ---- чистая полоса: одна черта во всю ширину ---- */
+.gg-div--line { gap: 0; }
+.gg-div--line::after { content: none; }
+.gg-div--line::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 85%, transparent) 12%,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 85%, transparent) 88%,
+    transparent
+  );
+}
+
+/* ---- орнамент: три ромба в разрыве, с разрядкой ---- */
+.gg-div--ornament .gg-div__mark {
+  font-size: 0.78em;
+  letter-spacing: 0.42em;
+  /* трекинг добавляет пустоту справа от последнего глифа — гасим её */
+  padding-left: 0.42em;
+  padding-right: 0;
 }
 
 .gg-div--edit {
@@ -1705,6 +1737,22 @@ select.field { cursor: pointer }
   align-items: center;
   gap: 0.8rem;
   letter-spacing: 0;
+}
+/* в редакторе линии рисуют span'ы с панелькой посередине — псевдоэлементы
+   готового вида здесь только мешали бы */
+.gg-div--edit::before,
+.gg-div--edit::after { content: none; }
+
+.gg-div__kind {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.05em;
+}
+
+.gg-div__sep {
+  width: 1px;
+  height: 1.1em;
+  margin: 0 0.35rem;
+  background: var(--line);
 }
 
 .gg-div__line {
@@ -1950,6 +1998,13 @@ select.field { cursor: pointer }
   min-width: 2.4rem;
   justify-content: center;
   font-size: 1rem;
+}
+
+/* «полоса» и «орнамент» — шире символов, чтобы вид читался в самой кнопке */
+.gg-chip--wide {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--accent, var(--bone-faint));
 }
 
 .gg-chip--char[data-on] {
@@ -2305,5 +2360,20 @@ select.field { cursor: pointer }
      недешёвая на слабом телефоне; на мобильном пусть просто открывается */
   .gg-plashka--letter::details-content {
     transition: none !important;
+  }
+
+  /* ---- зернистая плёнка: полноэкранный fixed-слой поверх ВСЕГО сайта,
+     тайлами из SVG-шума. При непрозрачности .035 на телефоне её всё равно
+     не разглядеть, а браузеру она стоит лишнего композитного слоя на
+     каждой странице — потому и «лагает везде одинаково». Виньетку
+     оставляем: это один дешёвый градиент, и он держит настроение. */
+  body::before { display: none; }
+
+  /* ---- длинная лента: не считать и не рисовать карточки за экраном.
+     contain-intrinsic-size задаёт браузеру примерную высоту, чтобы
+     полоса прокрутки не прыгала. */
+  .gg-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 26rem;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { uploadCharacterAvatar, removeCharacterAvatar } from '@/lib/actions/upload'
+import { shrinkImage } from '@/lib/image'
 
 type Props = {
   characterId: string
@@ -20,7 +21,8 @@ export default function AvatarUpload({ characterId, initialUrl }: Props) {
     setBusy(true)
 
     const fd = new FormData()
-    fd.append('file', file)
+    /* аватарка показывается маленькой — оригинал с камеры тут совсем не нужен */
+    fd.append('file', await shrinkImage(file, 512))
     fd.append('characterId', characterId)
     const res = await uploadCharacterAvatar(fd)
 
