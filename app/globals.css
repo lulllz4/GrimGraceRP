@@ -1786,6 +1786,71 @@ select.field { cursor: pointer }
   margin: 0 0 0.7rem;
 }
 
+/* ---- сворачивание длинных разделов ---- */
+
+/* заголовок-створка: во всю ширину, чтобы попадать пальцем не целясь */
+summary.gg-sheet__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+  transition: color 0.2s;
+}
+summary.gg-sheet__head::-webkit-details-marker { display: none; }
+summary.gg-sheet__head:hover { color: var(--accent, var(--bone)); }
+
+/* стрелка справа: повёрнута вниз у раскрытого раздела */
+summary.gg-sheet__head::after {
+  content: '⌄';
+  margin-left: auto;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--bone-faint);
+  transform: rotate(-90deg);
+  transition: transform 0.2s;
+}
+.gg-sheet__item--long[open] > summary.gg-sheet__head::after {
+  transform: rotate(0deg);
+}
+
+/* сколько читать — видно по свёрнутому заголовку */
+.gg-sheet__size {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.gg-sheet__item--long[open] > .gg-sheet__text { padding-top: 1rem; }
+
+.gg-sheet__bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+.gg-sheet__collapse {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  padding: 0.4rem 0.8rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.gg-sheet__collapse:hover {
+  color: var(--bone);
+  border-color: var(--bone-faint);
+}
+
 /* римская цифра — тише названия, но видна: по ней глаз находит раздел */
 .gg-sheet__no {
   color: var(--accent, var(--bone-faint));

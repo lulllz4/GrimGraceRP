@@ -5,6 +5,7 @@ import { getProfile } from '@/lib/auth'
 import { ELEMENTS, REGIONS, STATUS_LABEL, characterThemeStyle } from '@/lib/elements'
 import { DIVIDERS } from '@/lib/blocks'
 import { SHEET, SHEET_FIELDS, SHEET_RULE } from '@/lib/sheet'
+import SheetCollapse from '@/components/SheetCollapse'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,19 @@ export default async function CharacterPage({
   const player = c.profiles as { username: string; display_name: string | null } | null
   const element = ELEMENTS[c.element as keyof typeof ELEMENTS]
   const region = REGIONS[c.region as keyof typeof REGIONS]
+
+  /* сколько читать: по свёрнутому заголовку сразу видно, где абзац,
+     а где полотно на десять минут */
+  const lengthHint = (v: string) => {
+    const words = v.trim().split(/\s+/).filter(Boolean).length
+    if (words < 60) return 'коротко'
+    if (words < 400) return `${words} слов`
+    return `${words} слов · долгое чтение`
+  }
+
+  const hasSheet = SHEET_FIELDS.some(
+    (f) => String((c as Record<string, string | null>)[f.key] ?? '').trim(),
+  )
 
   const dividerSym = DIVIDERS[c.theme_divider as string] ?? DIVIDERS.fleuron
   const themeStyle = characterThemeStyle(c)
@@ -128,30 +142,55 @@ export default async function CharacterPage({
       )}
 
       {/* ---------- анкета: три части по шаблону ---------- */}
-      {SHEET.map((part, i) => {
-        const filled = part.fields.filter(
-          (f) => String((c as Record<string, string | null>)[f.key] ?? '').trim(),
-        )
-        if (!filled.length) return null
+      {/* Длинные разделы — сворачиваемые: в анкете на несколько тысяч слов
+          пролистать до нужного пункта иначе невозможно. Свёрнутая анкета
+          превращается в оглавление. */}
+      {hasSheet && (
+        <div className="gg-sheet__bar">
+          <SheetCollapse target="sheet" />
+        </div>
+      )}
 
-        return (
-          <section key={part.part} className="gg-sheet">
-            {i > 0 && <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>}
+      <div id="sheet">
+        {SHEET.map((part, i) => {
+          const filled = part.fields.filter(
+            (f) => String((c as Record<string, string | null>)[f.key] ?? '').trim(),
+          )
+          if (!filled.length) return null
 
-            {filled.map((f) => {
-              const value = String((c as Record<string, string | null>)[f.key])
-              return (
-                <div key={f.key} className={`gg-sheet__item gg-sheet__item--${f.kind}`}>
-                  <h2 className="gg-sheet__head">
-                    <span className="gg-sheet__no">{f.no}.</span> {f.label}
-                  </h2>
-                  <div className="gg-sheet__text">{value}</div>
-                </div>
-              )
-            })}
-          </section>
-        )
-      })}
+          return (
+            <section key={part.part} className="gg-sheet">
+              {i > 0 && <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>}
+
+              {filled.map((f) => {
+                const value = String((c as Record<string, string | null>)[f.key])
+
+                /* короткие пункты сворачивать незачем — они в одну строку */
+                if (f.kind === 'short') {
+                  return (
+                    <div key={f.key} className="gg-sheet__item gg-sheet__item--short">
+                      <h2 className="gg-sheet__head">
+                        <span className="gg-sheet__no">{f.no}.</span> {f.label}
+                      </h2>
+                      <div className="gg-sheet__text">{value}</div>
+                    </div>
+                  )
+                }
+
+                return (
+                  <details key={f.key} open className="gg-sheet__item gg-sheet__item--long">
+                    <summary className="gg-sheet__head">
+                      <span className="gg-sheet__no">{f.no}.</span> {f.label}
+                      <span className="gg-sheet__size">{lengthHint(value)}</span>
+                    </summary>
+                    <div className="gg-sheet__text">{value}</div>
+                  </details>
+                )
+              })}
+            </section>
+          )
+        })}
+      </div>
 
       {!SHEET_FIELDS.some((f) => String((c as Record<string, string | null>)[f.key] ?? '').trim()) && (
         <p className="text-sm italic text-[var(--bone-faint)]">
@@ -163,10 +202,13 @@ export default async function CharacterPage({
       {c.brief && (
         <section className="gg-sheet">
           <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>
-          <div className="gg-sheet__item gg-sheet__item--long">
-            <h2 className="gg-sheet__head">Из прежней анкеты</h2>
+          <details className="gg-sheet__item gg-sheet__item--long">
+            <summary className="gg-sheet__head">
+              Из прежней анкеты
+              <span className="gg-sheet__size">{lengthHint(c.brief)}</span>
+            </summary>
             <div className="gg-sheet__text">{c.brief}</div>
-          </div>
+          </details>
         </section>
       )}
 
