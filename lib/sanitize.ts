@@ -3,7 +3,8 @@ import sanitizeHtml from 'sanitize-html'
 const DATA_ATTRS = [
   'data-variant', 'data-title', 'data-meta',
   'data-place', 'data-time', 'data-weather',
-  'data-symbol', 'data-formula', 'data-result', 'data-comment',
+  'data-symbol', 'data-formula', 'data-result', 'data-comment', 'data-rolls',
+  'data-service', 'data-artist', 'data-url',
 ]
 
 export function cleanPostHtml(dirty: string): string {
@@ -44,6 +45,22 @@ export function cleanPostHtml(dirty: string): string {
         tagName,
         attribs: { ...attribs, target: '_blank', rel: 'noopener noreferrer' },
       }),
+
+      /* Карточка песни в редакторе рисуется блоком, чтобы нажатие не уводило
+         автора со страницы. Читателю она нужна ссылкой: тогда песня
+         открывается даже без скриптов, а плеер подставляется поверх.
+         Превращаем здесь — разбором, а не заменой по строке. */
+      div: (tagName, attribs) => {
+        const url = attribs['data-url']
+        if (!attribs.class?.includes('gg-track') || !url) return { tagName, attribs }
+        if (!/^https?:\/\//i.test(url)) return { tagName, attribs }
+
+        const { 'data-url': _drop, ...rest } = attribs
+        return {
+          tagName: 'a',
+          attribs: { ...rest, href: url, target: '_blank', rel: 'noopener noreferrer' },
+        }
+      },
       img: (tagName, attribs) => ({
         tagName,
         attribs: { ...attribs, loading: 'lazy' },

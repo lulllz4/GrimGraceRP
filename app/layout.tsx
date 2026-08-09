@@ -30,7 +30,7 @@ const marck = Marck_Script({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Grim Grace',
-  description: 'Лондон, XIX век. Хроники ночи.',
+  description: 'Лондон, 1852. Хроники ночи.',
 }
 
 /**

@@ -2032,6 +2032,122 @@ summary.gg-sheet__head::after {
 
 
 
+/* ---- песня ---- */
+
+.gg-track {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 2rem 0;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent, var(--line));
+  border-radius: var(--r);
+  background:
+    linear-gradient(105deg, rgba(var(--accent-glow), .07) 0%, transparent 45%),
+    var(--panel);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+.gg-track:hover { border-color: var(--accent, var(--bone-faint)); }
+
+/* пластинка: дорожки повторяющимся градиентом, блик — ещё одним.
+   Ни картинок, ни фильтров: на телефоне это ничего не стоит. */
+.gg-track__disc {
+  flex: none;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--accent, var(--crimson)) 0 14%, transparent 15%),
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,.07) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.10), transparent 55%),
+    var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: transform 0.6s;
+}
+.gg-track:hover .gg-track__disc { transform: rotate(40deg); }
+
+.gg-track__body { flex: 1; min-width: 0; }
+
+.gg-track__artist {
+  display: block;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--accent, var(--bone-dim));
+}
+
+.gg-track__title {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1.25;
+  /* длинное название не должно ломать карточку */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gg-track__where {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.gg-track__play {
+  flex: none;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 0.45rem 0.8rem;
+  white-space: nowrap;
+}
+.gg-track:hover .gg-track__play { color: var(--bone); border-color: var(--bone-faint); }
+
+/* пока ссылка не указана — карточка тише и не зовёт нажимать */
+.gg-track--empty { opacity: 0.8; }
+.gg-track--empty .gg-track__play { display: none; }
+
+/* карточка, из которой уже вырос плеер: играет он, звать больше некуда */
+.gg-track--playing {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+}
+.gg-track--playing .gg-track__play { display: none; }
+
+.gg-track__frame {
+  display: block;
+  width: 100%;
+  height: 9.5rem;
+  margin: 0 0 2rem;
+  border: 1px solid var(--line);
+  border-top: none;
+  border-left: 3px solid var(--accent, var(--line));
+  border-radius: 0 0 var(--r) var(--r);
+  background: var(--ink-2);
+}
+
+@media (max-width: 40rem) {
+  .gg-track { gap: 0.8rem; padding: 0.8rem 0.9rem; }
+  .gg-track__disc { width: 2.6rem; height: 2.6rem; }
+  .gg-track__title { font-size: 1.12rem; }
+  /* кнопка «поставить» на узком экране только теснит название —
+     нажимается вся карточка целиком */
+  .gg-track__play { display: none; }
+}
+
 /* ---- бросок ---- */
 
 .gg-dice {

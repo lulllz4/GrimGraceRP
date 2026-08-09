@@ -19,6 +19,7 @@ import { SizeGuard } from '@/lib/tiptap/guard'
 
 import { Plashka } from '@/lib/tiptap/plashka'
 import { SceneHeader, SceneDivider, DiceRoll } from '@/lib/tiptap/nodes'
+import { Track } from '@/lib/tiptap/track'
 import { Speech, Thought, Whisper, Shout } from '@/lib/tiptap/marks'
 import { BLOCK_GROUPS, BLOCKS, DIVIDERS, DIVIDER_KINDS, POST_KINDS, type BlockKey } from '@/lib/blocks'
 import { savePost } from '@/lib/actions/posts'
@@ -228,6 +229,7 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       SceneHeader,
       SceneDivider,
       DiceRoll,
+      Track,
       /* страховка: не пропускает правку, которая раздула бы документ */
       SizeGuard,
       Speech,

@@ -17,7 +17,7 @@ export default async function Header() {
           <span className="gg-brand__rule">
             <i /> <b>❦</b> <i />
           </span>
-          <span className="gg-brand__sub">Лондон · MDCCCLXXXVIII</span>
+          <span className="gg-brand__sub">Лондон · 1852</span>
         </Link>
       </div>
 
@@ -29,7 +29,7 @@ export default async function Header() {
             <Link href="/roster" className="gg-nav__link">Ростер</Link>
             <span className="gg-nav__dot">·</span>
             <a
-              href="https://grimgrace.example"
+              href="https://lulllz4.github.io/GrimGrace/"
               target="_blank"
               rel="noreferrer"
               className="gg-nav__link"

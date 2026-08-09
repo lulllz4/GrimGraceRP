@@ -236,5 +236,5 @@ export const DiceRoll = Node.create({
 })
 
 /** Узлы, у которых есть что править в панели. */
-export const EDITABLE_NODES = ['plashka', 'sceneHeader', 'sceneDivider', 'diceRoll'] as const
+export const EDITABLE_NODES = ['plashka', 'sceneHeader', 'sceneDivider', 'diceRoll', 'track'] as const
 export type EditableNode = (typeof EDITABLE_NODES)[number]

@@ -8,6 +8,7 @@ import { DIVIDERS, POST_KINDS } from '@/lib/blocks'
 import { ELEMENTS, characterThemeStyle } from '@/lib/elements'
 import { atmosphereStyle, normalizeAtmosphere } from '@/lib/atmosphere'
 import DeletePostButton from '@/components/DeletePostButton'
+import TrackPlayers from '@/components/TrackPlayers'
 
 export const dynamic = 'force-dynamic'
 
@@ -190,9 +191,13 @@ export default async function PostPage({
         <div className="fleuron my-8">{dividerSym}</div>
 
         <article
+          id="post-body"
           className="gg-prose gg-prose--read"
           dangerouslySetInnerHTML={{ __html: post.content_html ?? '' }}
         />
+        {/* карточки песен становятся плеерами по нажатию — до него не
+            загружается ничего */}
+        <TrackPlayers target="post-body" />
 
         <div className="fleuron my-12">{dividerSym}</div>
 

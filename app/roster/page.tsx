@@ -31,7 +31,7 @@ export default async function RosterPage() {
 
   return (
     <div className="wrap" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
-      <p className="eyebrow">Лондон · 1888</p>
+      <p className="eyebrow">Лондон · 1852</p>
       <h1 style={{ marginTop: '.3rem' }}>Ростер</h1>
       <p className="muted" style={{ marginBottom: '1.6rem' }}>
         {chars.length} {chars.length === 1 ? 'персонаж' : 'персонажей'} в городе.

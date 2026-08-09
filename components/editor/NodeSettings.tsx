@@ -5,6 +5,7 @@ import { useEditorState, type Editor } from '@tiptap/react'
 import { BLOCKS, BLOCK_GROUPS, DIVIDERS, DIVIDER_KINDS, type BlockKey } from '@/lib/blocks'
 import { EDITABLE_NODES, type EditableNode } from '@/lib/tiptap/nodes'
 import { roll, parseFormula } from '@/lib/dice'
+import { embedUrl, detectService, SERVICE_LABEL } from '@/lib/music'
 
 /**
  * Настройки выбранного блока — заголовок плашки, место сцены, формула броска.
@@ -67,6 +68,7 @@ const LABEL: Record<EditableNode, string> = {
   sceneHeader:  'Шапка сцены',
   sceneDivider: 'Разделитель',
   diceRoll:     'Бросок',
+  track:        'Песня',
 }
 
 export default function NodeSettings({ editor }: Props) {
@@ -138,7 +140,7 @@ export default function NodeSettings({ editor }: Props) {
       {name === 'sceneHeader' && (
         <>
           {field('place', 'Место', 'Уайтчепел, Дорсет-стрит')}
-          {field('time', 'Время', '9 ноября 1888, за полночь')}
+          {field('time', 'Время', '9 ноября 1852, за полночь')}
           {field('weather', 'Погода', 'туман, мелкий дождь')}
         </>
       )}
@@ -182,6 +184,22 @@ export default function NodeSettings({ editor }: Props) {
             onChange={(v) => set({ result: v, rolls: '' })}
           />
           {field('comment', 'Комментарий', 'проверка выдержки — успех')}
+        </>
+      )}
+
+      {name === 'track' && (
+        <>
+          {field('url', 'Ссылка на песню', 'https://music.yandex.ru/album/…/track/…')}
+          {field('artist', 'Исполнитель', 'Chelsea Wolfe')}
+          {field('title', 'Название', 'Feral Love')}
+
+          <small className="gg-hint">
+            {!attrs.url
+              ? 'YouTube, Spotify, Яндекс Музыка и SoundCloud открываются плеером прямо в посте. Любая другая ссылка станет просто ссылкой.'
+              : embedUrl(attrs.url)
+                ? `${SERVICE_LABEL[detectService(attrs.url)]} — читатель сможет послушать не уходя со страницы.`
+                : 'Плеер для этой ссылки не собрать — карточка останется ссылкой наружу. Это нормально.'}
+          </small>
         </>
       )}
 
