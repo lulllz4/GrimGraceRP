@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useEditorState, type Editor } from '@tiptap/react'
 import { BLOCKS, BLOCK_GROUPS, DIVIDERS, DIVIDER_KINDS, type BlockKey } from '@/lib/blocks'
 import { EDITABLE_NODES, type EditableNode } from '@/lib/tiptap/nodes'
+import { roll, parseFormula } from '@/lib/dice'
 
 /**
  * Настройки выбранного блока — заголовок плашки, место сцены, формула броска.
@@ -145,7 +146,41 @@ export default function NodeSettings({ editor }: Props) {
       {name === 'diceRoll' && (
         <>
           {field('formula', 'Формула', '2d6 + 3')}
-          {field('result', 'Результат', '11')}
+
+          <div className="gg-drawer__grid gg-drawer__grid--mid">
+            <button
+              type="button"
+              className="gg-btn gg-btn--main"
+              disabled={!parseFormula(attrs.formula ?? '')}
+              onClick={() => {
+                const r = roll(attrs.formula ?? '')
+                if (r) set({ result: String(r.total), rolls: r.breakdown })
+              }}
+            >
+              Бросить
+            </button>
+
+            {attrs.result
+              ? (
+                <span className="gg-roll">
+                  {attrs.rolls && <b>{attrs.rolls}</b>}
+                  <i>=</i>
+                  <em>{attrs.result}</em>
+                </span>
+              )
+              : <small className="gg-hint">Кости бросает сайт — вписывать число от руки не нужно.</small>}
+          </div>
+
+          {/* поле остаётся: кто-то кидает настоящие кости на столе и переносит
+              выпавшее сюда. Расклад при этом стирается — иначе рядом с числом
+              висел бы разбор от прошлого броска, который к нему не относится. */}
+          <AttrField
+            key={`${name}:result`}
+            label="Или вписать своё"
+            value={attrs.result ?? ''}
+            placeholder="11"
+            onChange={(v) => set({ result: v, rolls: '' })}
+          />
           {field('comment', 'Комментарий', 'проверка выдержки — успех')}
         </>
       )}

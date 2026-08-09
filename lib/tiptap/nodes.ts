@@ -1,6 +1,7 @@
 'use client'
 
-import { Node, mergeAttributes } from '@tiptap/core'
+import { Node, mergeAttributes, type CommandProps } from '@tiptap/core'
+import { NodeSelection } from '@tiptap/pm/state'
 import { ORNAMENT, type DividerVariant } from '@/lib/blocks'
 
 declare module '@tiptap/core' {
@@ -25,6 +26,28 @@ declare module '@tiptap/core' {
  * Пустой узел не должен пропадать из виду, поэтому при незаполненных полях
  * добавляется класс с подсказкой: её рисует CSS, разметки она не стоит.
  */
+
+
+/**
+ * Выделить только что вставленный узел, чтобы сразу открылась панель с его
+ * полями: иначе автор вставляет бросок и не понимает, где его заполнять.
+ *
+ * Точную позицию после вставки считать нельзя — ProseMirror мог поглотить
+ * пустой абзац и сдвинуть всё на единицу. Поэтому смотрим окно вокруг точки
+ * вставки и берём первый свой узел.
+ */
+const selectInserted = (typeName: string, at: number) =>
+  ({ tr, dispatch }: CommandProps) => {
+    if (!dispatch) return true
+    for (const pos of [at, at - 1, at + 1, at - 2]) {
+      if (pos < 0 || pos > tr.doc.content.size) continue
+      if (tr.doc.nodeAt(pos)?.type.name === typeName) {
+        tr.setSelection(NodeSelection.create(tr.doc, pos))
+        return true
+      }
+    }
+    return true
+  }
 
 /* ==================== ШАПКА СЦЕНЫ ==================== */
 
@@ -72,16 +95,14 @@ export const SceneHeader = Node.create({
     return {
       insertSceneHeader:
         () =>
-        ({ chain }) =>
-          chain()
+        ({ chain, state }) => {
+          const at = state.selection.to
+          return chain()
             .focus()
-            /* абзац следом — иначе курсор остаётся выделением на самом блоке,
-               и следующая вставка не добавится, а заменит его собой */
-            .insertContent([
-              { type: this.name, attrs: { place: '', time: '', weather: '' } },
-              { type: 'paragraph' },
-            ])
-            .run(),
+            .insertContentAt(at, { type: this.name, attrs: { place: '', time: '', weather: '' } })
+            .command(selectInserted(this.name, at))
+            .run()
+        },
     }
   },
 })
@@ -133,14 +154,14 @@ export const SceneDivider = Node.create({
     return {
       insertDivider:
         (variant, symbol = '❦') =>
-        ({ chain }) =>
-          chain()
+        ({ chain, state }) => {
+          const at = state.selection.to
+          return chain()
             .focus()
-            .insertContent([
-              { type: this.name, attrs: { variant, symbol } },
-              { type: 'paragraph' },
-            ])
-            .run(),
+            .insertContentAt(at, { type: this.name, attrs: { variant, symbol } })
+            .command(selectInserted(this.name, at))
+            .run()
+        },
     }
   },
 })
@@ -158,6 +179,9 @@ export const DiceRoll = Node.create({
       formula: { default: '', parseHTML: (el) => el.getAttribute('data-formula') || '' },
       result:  { default: '', parseHTML: (el) => el.getAttribute('data-result') || '' },
       comment: { default: '', parseHTML: (el) => el.getAttribute('data-comment') || '' },
+      /* расклад по костям: «4 + 5 + 3». Без него бросок неотличим от
+         числа, вписанного от руки. */
+      rolls:   { default: '', parseHTML: (el) => el.getAttribute('data-rolls') || '' },
     }
   },
 
@@ -166,13 +190,17 @@ export const DiceRoll = Node.create({
   },
 
   renderHTML({ node }) {
-    const { formula, result, comment } = node.attrs as Record<string, string>
+    const { formula, result, comment, rolls } = node.attrs as Record<string, string>
 
     const kids: unknown[] = [
       ['span', { class: 'gg-dice__icon' }, '🎲'],
       ['span', { class: 'gg-dice__formula' }, formula || '—'],
-      ['span', { class: 'gg-dice__result' }, result || '?'],
     ]
+
+    /* расклад показываем между формулой и итогом: «2d6+3 · 4 + 5 + 3 = 12» */
+    if (rolls) kids.push(['span', { class: 'gg-dice__rolls' }, rolls])
+
+    kids.push(['span', { class: 'gg-dice__result' }, result || '?'])
     if (comment) kids.push(['span', { class: 'gg-dice__comment' }, comment])
 
     return [
@@ -182,6 +210,7 @@ export const DiceRoll = Node.create({
         'data-formula': formula || null,
         'data-result': result || null,
         'data-comment': comment || null,
+        'data-rolls': rolls || null,
       }),
       ...kids,
     ] as never
@@ -191,14 +220,17 @@ export const DiceRoll = Node.create({
     return {
       insertDice:
         () =>
-        ({ chain }) =>
-          chain()
+        ({ chain, state }) => {
+          const at = state.selection.to
+          return chain()
             .focus()
-            .insertContent([
-              { type: this.name, attrs: { formula: '', result: '', comment: '' } },
-              { type: 'paragraph' },
-            ])
-            .run(),
+            .insertContentAt(at, {
+              type: this.name,
+              attrs: { formula: '2d6', result: '', comment: '', rolls: '' },
+            })
+            .command(selectInserted(this.name, at))
+            .run()
+        },
     }
   },
 })

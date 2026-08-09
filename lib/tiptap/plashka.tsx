@@ -55,9 +55,16 @@ export const Plashka = Node.create({
   },
 
   parseHTML() {
+    /* contentElement функцией, а не строкой: если тела в разметке нет
+       (кривая или чужая запись), строковый вариант отдаёт null и разбор
+       падает вместе со всей страницей правки. Здесь в худшем случае телом
+       становится сама плашка. */
+    const body = (el: HTMLElement) =>
+      (el.querySelector('.gg-plashka__body') as HTMLElement | null) ?? el
+
     return [
-      { tag: 'div.gg-plashka', contentElement: '.gg-plashka__body' },
-      { tag: 'details.gg-plashka', contentElement: '.gg-plashka__body' },
+      { tag: 'div.gg-plashka', contentElement: body },
+      { tag: 'details.gg-plashka', contentElement: body },
     ]
   },
 
@@ -118,11 +125,14 @@ export const Plashka = Node.create({
     return {
       insertPlashka:
         (variant) =>
-        ({ chain }) => {
+        ({ chain, state }) => {
           const def = BLOCKS[variant] ?? BLOCKS.note
+          /* вставляем ЗА текущим выделением: если сейчас выбран неделимый
+             блок (шапка сцены, разделитель), обычная вставка заменила бы
+             его собой — предыдущий блок просто исчезал */
           return chain()
             .focus()
-            .insertContent({
+            .insertContentAt(state.selection.to, {
               type: this.name,
               attrs: { variant, title: '', meta: '' },
               content: [

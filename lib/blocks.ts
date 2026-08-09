@@ -125,10 +125,18 @@ export const BLOCKS: Record<BlockKey, BlockDef> = {
   },
 }
 
+/**
+ * Что предлагается автору при вставке.
+ *
+ * «Внешность» и «Системное» отсюда убраны. Их описания при этом остались
+ * в BLOCKS намеренно: в уже написанных постах такие плашки могут стоять,
+ * и без описания они потеряли бы название и подписи полей. Из палитры
+ * пропали, старые записи целы.
+ */
 export const BLOCK_GROUPS: Array<{ label: string; items: BlockKey[] }> = [
   { label: 'Документы', items: ['letter', 'scroll', 'note', 'telegram', 'newspaper', 'diary', 'dossier', 'invitation', 'poster', 'obituary'] },
-  { label: 'Сцена',     items: ['epigraph', 'chronicle', 'dialogue', 'appearance'] },
-  { label: 'Механика',  items: ['system', 'ooc', 'spoiler'] },
+  { label: 'Сцена',     items: ['epigraph', 'chronicle', 'dialogue'] },
+  { label: 'Механика',  items: ['ooc', 'spoiler'] },
 ]
 
 export const BLOCK_KEYS = Object.keys(BLOCKS) as BlockKey[]
