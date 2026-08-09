@@ -1,12 +1,6 @@
 'use client'
 
 import { Node, mergeAttributes } from '@tiptap/core'
-import {
-  NodeViewWrapper,
-  NodeViewContent,
-  ReactNodeViewRenderer,
-  type NodeViewProps,
-} from '@tiptap/react'
 import { BLOCKS, type BlockKey } from '@/lib/blocks'
 
 declare module '@tiptap/core' {
@@ -17,94 +11,28 @@ declare module '@tiptap/core' {
   }
 }
 
-/* ---------------- вид в редакторе ---------------- */
-
 /**
- * ПРОВЕРКА: ?nofields в адресе рисует заголовок и подпись плашки обычным
- * текстом вместо полей ввода.
+ * Плашка — обычный узел, без React-вида.
  *
- * Поле ввода внутри редактируемой области — давняя больная точка мобильных
- * браузеров: фокус поля и выделение редактора начинают спорить друг с другом.
- * Если с этим флагом телефон перестаёт виснуть, причина найдена и я переношу
- * правку заголовка плашки за пределы холста.
+ * Раньше здесь жил ReactNodeViewRenderer: внутрь редактируемой области
+ * подмешивалось React-дерево с полями ввода и накладкой на `contentEditable`.
+ * Это самая хрупкая конструкция в TipTap, и на телефонах она вешала браузер.
+ * Теперь узел устроен как цитата: div с редактируемым телом внутри — то есть
+ * ровно тот механизм, который работает везде.
+ *
+ * Заголовок и подпись живут в атрибутах и правятся в панели редактора,
+ * снаружи холста. Название вида показывается через CSS из data-атрибута,
+ * так что и на него не тратится ни одного узла разметки.
+ *
+ * Письмо в готовом посте превращается в запечатанный конверт (`details`)
+ * уже на сервере, в cleanPostHtml: редактору незачем знать про конверты,
+ * а автору незачем открывать конверт, чтобы дописать строку.
  */
-function noFieldsRequested(): boolean {
-  if (typeof window === 'undefined') return false
-  return new URLSearchParams(window.location.search).has('nofields')
-}
-
-function PlashkaView(props: NodeViewProps) {
-  const { node, updateAttributes, deleteNode } = props
-  const variant = (node.attrs.variant as BlockKey) || 'note'
-  const def = BLOCKS[variant] ?? BLOCKS.note
-  const noFields = noFieldsRequested()
-
-  return (
-    <NodeViewWrapper
-      className="gg-plashka gg-plashka--edit"
-      data-variant={variant}
-    >
-      <div className="gg-plashka__chrome" contentEditable={false}>
-        <span className="gg-plashka__badge">
-          <b>{def.icon}</b> {def.label}
-        </span>
-        <button
-          type="button"
-          className="gg-plashka__kill"
-          onClick={() => deleteNode()}
-          title="Удалить плашку"
-        >
-          ✕
-        </button>
-      </div>
-
-      {def.title !== false && (
-        <div contentEditable={false}>
-          {noFields ? (
-            <div className="gg-plashka__field gg-plashka__field--title">
-              {(node.attrs.title as string) || def.title}
-            </div>
-          ) : (
-            <input
-              className="gg-plashka__field gg-plashka__field--title"
-              value={(node.attrs.title as string) ?? ''}
-              placeholder={def.title}
-              onChange={(e) => updateAttributes({ title: e.target.value })}
-            />
-          )}
-        </div>
-      )}
-
-      <NodeViewContent className="gg-plashka__body" />
-
-      {def.meta !== false && (
-        <div contentEditable={false}>
-          {noFields ? (
-            <div className="gg-plashka__field gg-plashka__field--meta">
-              {(node.attrs.meta as string) || def.meta}
-            </div>
-          ) : (
-            <input
-              className="gg-plashka__field gg-plashka__field--meta"
-              value={(node.attrs.meta as string) ?? ''}
-              placeholder={def.meta}
-              onChange={(e) => updateAttributes({ meta: e.target.value })}
-            />
-          )}
-        </div>
-      )}
-    </NodeViewWrapper>
-  )
-}
-
-/* ---------------- сама нода ---------------- */
-
 export const Plashka = Node.create({
   name: 'plashka',
   group: 'block',
   content: 'block+',
   defining: true,
-  isolating: true,
 
   addAttributes() {
     return {
@@ -116,8 +44,7 @@ export const Plashka = Node.create({
       title: {
         default: '',
         parseHTML: (el) => el.getAttribute('data-title') || '',
-        renderHTML: (attrs) =>
-          attrs.title ? { 'data-title': attrs.title } : {},
+        renderHTML: (attrs) => (attrs.title ? { 'data-title': attrs.title } : {}),
       },
       meta: {
         default: '',
@@ -129,30 +56,30 @@ export const Plashka = Node.create({
 
   parseHTML() {
     return [
-      {
-        tag: 'div.gg-plashka',
-        contentElement: '.gg-plashka__body',
-      },
-      {
-        tag: 'details.gg-plashka',
-        contentElement: '.gg-plashka__body',
-      },
+      { tag: 'div.gg-plashka', contentElement: '.gg-plashka__body' },
+      { tag: 'details.gg-plashka', contentElement: '.gg-plashka__body' },
     ]
   },
 
   renderHTML({ HTMLAttributes, node }) {
     const variant = node.attrs.variant as BlockKey
 
-    /* письмо рендерится как конверт: закрыт, пока читатель не кликнет */
+    /* Письмо — запечатанный конверт: читатель нажимает и разворачивает.
+       В редакторе конверт всегда раскрыт (`open`), иначе автор не увидит,
+       что пишет; при сохранении этот атрибут снимает cleanPostHtml. */
     if (variant === 'letter') {
-      const unfurlKids: unknown[] = [['div', { class: 'gg-plashka__body' }, 0]]
+      const unfurl: unknown[] = [['div', { class: 'gg-plashka__body' }, 0]]
       if (node.attrs.meta) {
-        unfurlKids.push(['div', { class: 'gg-plashka__meta' }, node.attrs.meta])
+        unfurl.push(['div', { class: 'gg-plashka__meta' }, node.attrs.meta])
       }
 
       return [
         'details',
-        mergeAttributes(HTMLAttributes, { class: 'gg-plashka gg-plashka--letter' }),
+        mergeAttributes(
+          HTMLAttributes,
+          { class: 'gg-plashka gg-plashka--letter' },
+          this.editor ? { open: 'open' } : {},
+        ),
         [
           'summary',
           { class: 'gg-plashka__cover' },
@@ -160,7 +87,7 @@ export const Plashka = Node.create({
           ['span', { class: 'gg-plashka__sender' }, (node.attrs.title as string) || 'Письмо'],
           ['span', { class: 'gg-plashka__hint' }, 'Надорвать сургуч…'],
         ],
-        ['div', { class: 'gg-plashka__unfurl' }, ...unfurlKids],
+        ['div', { class: 'gg-plashka__unfurl' }, ...unfurl],
       ] as never
     }
 
@@ -170,23 +97,21 @@ export const Plashka = Node.create({
       kids.push(['div', { class: 'gg-plashka__title' }, node.attrs.title])
     }
 
+    /* 0 — дыра под редактируемое тело: ProseMirror сам подставит сюда
+       содержимое узла и сделает этот div contentDOM */
     kids.push(['div', { class: 'gg-plashka__body' }, 0])
 
     if (node.attrs.meta) {
       kids.push(['div', { class: 'gg-plashka__meta' }, node.attrs.meta])
     }
 
-    const extraAttrs = variant === 'spoiler' ? { tabindex: '0' } : {}
+    const extra = variant === 'spoiler' ? { tabindex: '0' } : {}
 
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { class: 'gg-plashka' }, extraAttrs),
+      mergeAttributes(HTMLAttributes, { class: 'gg-plashka' }, extra),
       ...kids,
     ] as never
-  },
-
-  addNodeView() {
-    return ReactNodeViewRenderer(PlashkaView)
   },
 
   addCommands() {
@@ -194,17 +119,14 @@ export const Plashka = Node.create({
       insertPlashka:
         (variant) =>
         ({ chain }) => {
-          const def = BLOCKS[variant]
+          const def = BLOCKS[variant] ?? BLOCKS.note
           return chain()
             .focus()
             .insertContent({
               type: this.name,
               attrs: { variant, title: '', meta: '' },
               content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: def.body }],
-                },
+                { type: 'paragraph', content: [{ type: 'text', text: def.body }] },
               ],
             })
             .run()

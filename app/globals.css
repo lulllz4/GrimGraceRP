@@ -1049,73 +1049,15 @@ select.field { cursor: pointer }
 .gg-plashka__body > p { margin: 0 0 0.7rem; }
 .gg-plashka__body > p:last-child { margin-bottom: 0; }
 
-/* ---------------- вид в редакторе ---------------- */
 
-.gg-plashka--edit {
-  padding-top: 2.4rem;
-}
 
-.gg-plashka__chrome {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.3rem 0.6rem;
-  background: color-mix(in srgb, var(--ink) 65%, transparent);
-  border-bottom: 1px solid var(--line);
-}
 
-.gg-plashka__badge {
-  font-size: var(--t-label);
-  letter-spacing: var(--tr-label);
-  text-transform: uppercase;
-  color: var(--bone-faint);
-}
 
-.gg-plashka__badge b { font-style: normal; }
 
-.gg-plashka__kill {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--bone-faint);
-  font-size: 0.8rem;
-  line-height: 1;
-  padding: 0.2rem 0.35rem;
-}
 
-.gg-plashka__kill:hover { color: var(--crimson-lt); }
 
-.gg-plashka__field {
-  width: 100%;
-  background: none;
-  border: none;
-  border-bottom: 1px dashed var(--line);
-  padding: 0.25rem 0;
-  margin-bottom: 0.6rem;
-  color: var(--bone);
-  font-family: inherit;
-  outline: none;
-}
 
-.gg-plashka__field:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
 
-.gg-plashka__field--title {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  letter-spacing: 0.07em;
-}
-
-.gg-plashka__field--meta {
-  margin: 0.7rem 0 0;
-  font-size: var(--t-label);
-  letter-spacing: var(--tr-label);
-  text-transform: uppercase;
-  color: var(--bone-faint);
-}
 
 /* ================================================================
    ПЛАШКИ — характеры
@@ -1748,8 +1690,6 @@ select.field { cursor: pointer }
 .gg-plashka[data-variant='spoiler']:focus-within::after {
   opacity: 0;
 }
-.gg-plashka--edit[data-variant='spoiler'] .gg-plashka__body { filter: none; }
-.gg-plashka--edit[data-variant='spoiler']::after { display: none; }
 
 /* ================================================================
    ШАПКА СЦЕНЫ / РАЗДЕЛИТЕЛЬ / БРОСОК
@@ -1787,40 +1727,8 @@ select.field { cursor: pointer }
   color: var(--bone-faint);
 }
 
-.gg-scene--edit { padding: 1.4rem 2.5rem; }
 
-.gg-scene__in {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  border-bottom: 1px dashed var(--line);
-  text-align: center;
-  color: var(--bone);
-  outline: none;
-  padding: 0.25rem 0;
-  margin-bottom: 0.4rem;
-  font-family: inherit;
-}
-.gg-scene__in:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
 
-.gg-scene__in--place {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  letter-spacing: var(--tr-label);
-  text-transform: uppercase;
-}
-.gg-scene__in--time {
-  font-size: var(--t-label);
-  letter-spacing: var(--tr-label);
-  text-transform: uppercase;
-  color: var(--bone-dim);
-}
-.gg-scene__in--weather {
-  font-size: 0.88rem;
-  font-style: italic;
-  color: var(--bone-faint);
-}
 
 /* ═══════════════ АТМОСФЕРА ПОСТА ═══════════════ */
 
@@ -1941,55 +1849,11 @@ select.field { cursor: pointer }
   padding-right: 0;
 }
 
-.gg-div--edit {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  letter-spacing: 0;
-}
-/* в редакторе линии рисуют span'ы с панелькой посередине — псевдоэлементы
-   готового вида здесь только мешали бы */
-.gg-div--edit::before,
-.gg-div--edit::after { content: none; }
 
-.gg-div__kind {
-  font-size: 0.72rem !important;
-  letter-spacing: 0.05em;
-}
 
-.gg-div__sep {
-  width: 1px;
-  height: 1.1em;
-  margin: 0 0.35rem;
-  background: var(--line);
-}
 
-.gg-div__line {
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
 
-.gg-div__pick {
-  display: flex;
-  gap: 0.15rem;
-}
 
-.gg-div__pick button {
-  background: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-  color: var(--bone-faint);
-  padding: 0.15rem 0.35rem;
-  font-size: 0.9rem;
-  line-height: 1;
-}
-.gg-div__pick button:hover { color: var(--bone); }
-.gg-div__pick button[data-on] {
-  color: var(--accent, var(--crimson-lt));
-  border-color: var(--line);
-}
-.gg-div__kill { margin-left: 0.4rem; }
 
 /* ---- бросок ---- */
 
@@ -2022,20 +1886,6 @@ select.field { cursor: pointer }
   font-style: italic;
 }
 
-.gg-dice__in {
-  background: none;
-  border: none;
-  border-bottom: 1px dashed var(--line);
-  color: var(--bone);
-  font-family: inherit;
-  font-size: inherit;
-  outline: none;
-  padding: 0.15rem 0;
-}
-.gg-dice__in:focus { border-bottom-color: var(--accent, var(--crimson-lt)); }
-.gg-dice__in--f { width: 7rem; }
-.gg-dice__in--r { width: 4rem; color: var(--accent, var(--crimson-lt)); font-weight: 700; }
-.gg-dice__in--c { flex: 1; min-width: 8rem; font-style: italic; }
 .gg-dice__eq { color: var(--bone-faint); }
 
 /* ================================================================
@@ -2112,6 +1962,41 @@ select.field { cursor: pointer }
   color: inherit;
   font: inherit;
   padding: 0.15rem 0.5rem;
+}
+
+/* ═══════ БЛОКИ В РЕДАКТОРЕ ═══════
+   Узлы больше не носят внутри себя ни кнопок, ни полей: их правит панель
+   снаружи холста. Значит редактору нужно ровно две вещи — показать, какой
+   блок сейчас выбран, и не дать пустому блоку исчезнуть из виду. */
+
+/* выбранный неделимый блок — шапка сцены, разделитель, бросок */
+.gg-canvas .ProseMirror-selectednode {
+  outline: 1px solid var(--accent, var(--crimson-lt));
+  outline-offset: 3px;
+}
+
+/* плашка подсвечивается, пока курсор внутри неё */
+.gg-canvas .gg-plashka:focus-within {
+  border-color: var(--accent, var(--line));
+}
+
+/* конверт письма в редакторе всегда раскрыт, а сам конверт прячем: автор
+   правит текст, а не открывает и закрывает створку */
+.gg-canvas details.gg-plashka > summary { display: none; }
+
+/* пустой блок без единого заполненного поля виден только по подсказке */
+.gg-canvas .gg-scene--empty,
+.gg-canvas .gg-dice--empty {
+  opacity: 0.75;
+}
+.gg-canvas .gg-scene--empty::after,
+.gg-canvas .gg-dice--empty::after {
+  content: 'заполняется в панели ниже';
+  display: block;
+  font-size: var(--t-label);
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--bone-faint);
 }
 
 /* ---- всплывающие панели редактора ----
@@ -2243,6 +2128,14 @@ select.field { cursor: pointer }
 }
 
 .gg-drawer--form { gap: 1rem; }
+
+/* панель настроек выбранного блока — не липкая: она появляется и исчезает
+   вместе с курсором, и прыгающий липкий блок тут только мешал бы */
+.gg-drawer--node {
+  position: static;
+  max-height: none;
+  border-left: 3px solid var(--accent, var(--line));
+}
 
 .gg-drawer__label {
   font-size: var(--t-label);
@@ -2707,7 +2600,6 @@ select.field { cursor: pointer }
   .gg-editor__line { gap: 0.5rem; margin-bottom: 2.2rem; }
   .gg-editor__who i { margin: 0 0.35rem; }
   .gg-chip { padding: 0.55rem 0.85rem; }
-  .gg-plashka__kill { padding: 0.4rem 0.5rem; font-size: 0.95rem; }
 
   /* ---- drop-shadow на плашках с вырезанным clip-path (телеграмма, газета,
      афиша, приглашение, досье, некролог, конверт письма) — самый дорогой

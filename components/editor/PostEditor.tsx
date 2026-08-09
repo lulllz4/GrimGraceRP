@@ -14,6 +14,8 @@ import { shrinkImage } from '@/lib/image'
 import { useIsTouch } from '@/lib/use-touch'
 import { trace } from '@/lib/trace'
 import CrashCatcher from '@/components/editor/CrashCatcher'
+import NodeSettings from '@/components/editor/NodeSettings'
+import { SizeGuard } from '@/lib/tiptap/guard'
 
 import { Plashka } from '@/lib/tiptap/plashka'
 import { SceneHeader, SceneDivider, DiceRoll } from '@/lib/tiptap/nodes'
@@ -226,6 +228,8 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       SceneHeader,
       SceneDivider,
       DiceRoll,
+      /* страховка: не пропускает правку, которая раздула бы документ */
+      SizeGuard,
       Speech,
       Thought,
       Whisper,
@@ -929,6 +933,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
           </label>
         </div>
       )}
+
+      {/* поля выбранного блока — снаружи холста, а не внутри него */}
+      <NodeSettings editor={editor} />
 
       {/* ============ холст ============ */}
       {/* атмосфера видна прямо во время письма, а не только у читателя */}

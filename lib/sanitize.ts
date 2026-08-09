@@ -25,7 +25,10 @@ export function cleanPostHtml(dirty: string): string {
       h2:        ['class', 'style'],
       h3:        ['class', 'style'],
       h4:        ['class', 'style'],
-      details:   ['open'],
+      /* `open` намеренно не пропускаем: в редакторе конверт письма раскрыт,
+         иначе автор не видит, что пишет, а читателю он должен достаться
+         запечатанным. Атрибут снимается здесь, при сохранении. */
+      details:   [],
     },
     allowedStyles: {
       '*': {
