@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useEditorState, type Editor } from '@tiptap/react'
 import { BLOCKS, BLOCK_GROUPS, DIVIDERS, DIVIDER_KINDS, type BlockKey } from '@/lib/blocks'
 import { EDITABLE_NODES, type EditableNode } from '@/lib/tiptap/nodes'
@@ -17,6 +18,48 @@ import { EDITABLE_NODES, type EditableNode } from '@/lib/tiptap/nodes'
  */
 
 type Props = { editor: Editor | null }
+
+/**
+ * Поле панели со своим состоянием.
+ *
+ * Значение хранится локально и уходит в документ на каждое нажатие, но
+ * обратно из документа подхватывается, только пока поле не в фокусе. Иначе
+ * каждая буква гоняла бы значение по кругу через ProseMirror, а курсор
+ * прыгал бы в конец строки при правке середины.
+ */
+function AttrField({
+  label, value, placeholder, onChange,
+}: {
+  label: string
+  value: string
+  placeholder?: string
+  onChange: (v: string) => void
+}) {
+  const [local, setLocal] = useState(value)
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    /* перешли на другой блок — показываем его значение; но пока автор печатает,
+       поле себе не мешаем */
+    if (document.activeElement !== ref.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocal(value)
+    }
+  }, [value])
+
+  return (
+    <label className="gg-field">
+      <span>{label}</span>
+      <input
+        ref={ref}
+        className="gg-input"
+        value={local}
+        placeholder={placeholder}
+        onChange={(e) => { setLocal(e.target.value); onChange(e.target.value) }}
+      />
+    </label>
+  )
+}
 
 const LABEL: Record<EditableNode, string> = {
   plashka:      'Плашка',
@@ -43,19 +86,22 @@ export default function NodeSettings({ editor }: Props) {
   if (!editor || !state) return null
 
   const { name, attrs } = state
+
+  /* БЕЗ .focus(): панель живёт снаружи холста, и если вернуть фокус в
+     редактор, поле ввода потеряет его на первой же букве, а следующий
+     символ уйдёт мимо. Выделение в документе никуда не девается и без
+     фокуса, так что updateAttributes попадает куда надо. */
   const set = (patch: Record<string, string>) =>
-    editor.chain().focus().updateAttributes(name, patch).run()
+    editor.chain().updateAttributes(name, patch).run()
 
   const field = (key: string, label: string, placeholder = '') => (
-    <label className="gg-field">
-      <span>{label}</span>
-      <input
-        className="gg-input"
-        value={attrs[key] ?? ''}
-        placeholder={placeholder}
-        onChange={(e) => set({ [key]: e.target.value })}
-      />
-    </label>
+    <AttrField
+      key={`${name}:${key}`}
+      label={label}
+      value={attrs[key] ?? ''}
+      placeholder={placeholder}
+      onChange={(v) => set({ [key]: v })}
+    />
   )
 
   return (
