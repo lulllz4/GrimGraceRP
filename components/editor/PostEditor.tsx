@@ -12,8 +12,6 @@ import { IndentDropcap } from '@/lib/tiptap/format'
 import { uploadPostImage } from '@/lib/actions/upload'
 import { shrinkImage } from '@/lib/image'
 import { useIsTouch } from '@/lib/use-touch'
-import { trace } from '@/lib/trace'
-import CrashCatcher from '@/components/editor/CrashCatcher'
 import NodeSettings from '@/components/editor/NodeSettings'
 import { SizeGuard } from '@/lib/tiptap/guard'
 
@@ -141,7 +139,6 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
            отрисовки. Самый длинный пост в проекте — десятки килобайт, так что
            за этой границей документ уже не текст, а поломка. */
         if (body.length > MAX_DRAFT) {
-          trace(`черновик раздулся до ${Math.round(body.length / 1024)} КБ — не сохраняю`)
           localStorage.removeItem(DRAFT_KEY)
           return
         }
@@ -180,7 +177,6 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
       /* сначала длина строки — она ничего не разбирает и потому безопасна
          при любом размере; разбирать гигантский черновик нельзя */
       if (raw && raw.length > MAX_DRAFT) {
-        trace(`выброшен раздутый черновик, ${Math.round(raw.length / 1024)} КБ`)
         localStorage.removeItem(DRAFT_KEY)
       } else if (raw) {
         const d = JSON.parse(raw)
@@ -249,25 +245,9 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
     },
   })
 
-  /* ВРЕМЕННОЕ: даёт заглянуть в живой редактор из консоли браузера.
-     Заодно служит меткой сборки: если `ggEditor` в консоли есть — на сайте
-     свежий код. Убрать, когда разберёмся с зависанием на телефоне. */
+  /* автосохранению нужен редактор в момент срабатывания таймера */
   useEffect(() => {
     editorRef.current = editor
-    if (!editor) return
-    /* ВРЕМЕННОЕ: отмечаем открытие редактора и способ ввода — заодно видно,
-       сработало ли определение пальцевого устройства на самом телефоне */
-    {
-      let draftSize = 0
-      try { draftSize = (localStorage.getItem(DRAFT_KEY) || '').length } catch { /* ignore */ }
-      trace(
-        `редактор открыт · ${isTouch ? 'палец' : 'мышь'} · сборка ${build ?? '—'}` +
-        ` · черновик ${Math.round(draftSize / 1024)} КБ · узлов ${editor.state.doc.nodeSize}`,
-      )
-    }
-    const w = window as unknown as { ggEditor?: unknown }
-    w.ggEditor = editor
-    return () => { delete w.ggEditor }
   }, [editor])
 
   const wordCount = useEditorState({
@@ -499,9 +479,6 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
         </div>
       )}
 
-      {/* ВРЕМЕННОЕ: ловец ошибок и зависаний — на телефоне консоли нет */}
-      <CrashCatcher />
-
       {/* ============ заголовок ============ */}
       <input
         className="gg-editor__title"
@@ -588,14 +565,8 @@ export default function PostEditor({ mine, all, initial, build }: Props) {
                          панель начинают спорить за прокрутку — на телефоне,
                          где ещё и клавиатура меняет высоту окна, это ощущается
                          как зависание */
-                      /* ВРЕМЕННОЕ: пошаговые отметки — ищем, где встаёт телефон */
-                      trace(`нажата плашка «${BLOCKS[k].label}»`)
                       setPanel(null)
-                      trace('ящик закрыт')
                       editor?.chain().focus().insertPlashka(k as BlockKey).run()
-                      trace('вставка вернула управление')
-                      requestAnimationFrame(() => trace('кадр отрисован'))
-                      setTimeout(() => trace('через секунду страница жива'), 1000)
                     }}
                   >
                     <span className="gg-chip__icon">{BLOCKS[k].icon}</span>

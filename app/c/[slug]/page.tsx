@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/auth'
 import { ELEMENTS, REGIONS, STATUS_LABEL, characterThemeStyle } from '@/lib/elements'
@@ -8,6 +10,57 @@ import { SHEET, SHEET_FIELDS, SHEET_RULE } from '@/lib/sheet'
 import SheetCollapse from '@/components/SheetCollapse'
 
 export const dynamic = 'force-dynamic'
+
+/* один запрос на страницу и на метаданные — иначе база спрашивается дважды */
+const getCharacter = cache(async (slug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('characters')
+    .select('*, profiles:current_player_id(username, display_name)')
+    .eq('slug', slug)
+    .single()
+  return data
+})
+
+/**
+ * Ссылками на персонажей в таком сообществе перебрасываются постоянно.
+ * Без этого в предпросмотре ссылки было видно только «Grim Grace» —
+ * ни имени, ни лица.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const c = await getCharacter(slug)
+  if (!c) return {}
+
+  const element = ELEMENTS[c.element as keyof typeof ELEMENTS]?.label
+  const region = REGIONS[c.region as keyof typeof REGIONS]?.label
+  const description =
+    c.epithet ||
+    [c.species, c.status_note].filter(Boolean).join(' · ') ||
+    [element, region].filter(Boolean).join(' · ') ||
+    'Персонаж Grim Grace'
+
+  return {
+    title: `${c.name} — Grim Grace`,
+    description,
+    openGraph: {
+      title: c.name as string,
+      description,
+      type: 'profile',
+      images: c.avatar_url ? [c.avatar_url as string] : undefined,
+    },
+    twitter: {
+      card: c.avatar_url ? 'summary' : 'summary',
+      title: c.name as string,
+      description,
+      images: c.avatar_url ? [c.avatar_url as string] : undefined,
+    },
+  }
+}
 
 export default async function CharacterPage({
   params,
@@ -18,11 +71,7 @@ export default async function CharacterPage({
   const supabase = await createClient()
   const me = await getProfile()
 
-  const { data: c } = await supabase
-    .from('characters')
-    .select('*, profiles:current_player_id(username, display_name)')
-    .eq('slug', slug)
-    .single()
+  const c = await getCharacter(slug)
 
   if (!c) notFound()
 

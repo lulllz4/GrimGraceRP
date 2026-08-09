@@ -31,6 +31,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Grim Grace',
   description: 'Лондон, 1852. Хроники ночи.',
+  /* Второй слой запрета индексации, помимо robots.txt: тот только просит
+     не заходить, а это указание не помещать страницу в выдачу. Работает и
+     тогда, когда на страницу пришли по чужой ссылке.
+     Предпросмотр ссылок в мессенджерах при этом сохраняется — им запрет
+     на индексацию не мешает. */
+  robots: { index: false, follow: false },
 }
 
 /**

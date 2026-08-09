@@ -2,7 +2,6 @@
 
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
-import { trace } from '@/lib/trace'
 
 /**
  * Предохранитель на размер документа.
@@ -30,7 +29,8 @@ export const SizeGuard = Extension.create({
           if (!tr.docChanged) return true
           const size = tr.doc.nodeSize
           if (size > MAX_DOC) {
-            trace(`ПРЕДОХРАНИТЕЛЬ: документ вырос до ${size} узлов, правка отклонена`)
+            // eslint-disable-next-line no-console
+            console.warn(`[gg] предохранитель: документ вырос до ${size} узлов, правка отклонена`)
             return false
           }
           return true

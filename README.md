@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Grim Grace
 
-## Getting Started
+Площадка для текстовой ролевой игры: Лондон, 1852, вампиры. Игроки пишут посты
+от лица своих персонажей, ведут анкеты и читают чужие хроники.
 
-First, run the development server:
+Сделано на Next.js и Supabase, размещается на Vercel.
+
+## Запуск у себя
+
+Нужен Node 20 или новее.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Сайт поднимется на `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Перед запуском нужен файл `.env.local` с ключами Supabase:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_SUPABASE_URL=…
+NEXT_PUBLIC_SUPABASE_ANON_KEY=…
+SUPABASE_SERVICE_KEY=…
+NEXT_PUBLIC_SITE_URL=…
+EMAIL_DOMAIN=…
+```
 
-## Learn More
+`SUPABASE_SERVICE_KEY` обходит правила доступа и используется только в
+серверных действиях админки — в браузер он не попадает.
 
-To learn more about Next.js, take a look at the following resources:
+## Как устроено
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| где | что |
+|---|---|
+| `app/` | страницы: лента, пост, персонаж, ростер, кабинет, админка |
+| `components/editor/` | редактор постов на TipTap |
+| `lib/tiptap/` | свои узлы: плашки, шапка сцены, разделитель, бросок, песня |
+| `lib/atmosphere.ts` | оформление поста: материал, свет, набор |
+| `lib/sheet.ts` | описание анкеты персонажа — один список на форму и на страницу |
+| `lib/sanitize.ts` | очистка HTML перед сохранением в базу |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Схема базы живёт в Supabase и в репозитории пока не отражена.
 
-## Deploy on Vercel
+## Правила, которые стоили дорого
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Они записаны в `AGENTS.md`. Коротко, чтобы не наступить снова:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Документ редактора уходит в серверное действие строкой, а не объектом.**
+  React молча выбрасывает объекты без прототипа, а ProseMirror делает именно
+  такие — из-за этого посты теряли картинки и всё оформление.
+- **Никаких React-видов внутри редактируемой области.** Поля ввода на
+  `contentEditable={false}` вешали мобильные браузеры целиком.
+- **Ничего дорогого для отрисовки на телефоне**: ни `backdrop-filter`, ни
+  полноэкранных `fixed`-слоёв, ни размытий поверх больших блоков.
+- **Картинки ужимаются в браузере до загрузки** — оригинал с камеры класть
+  в хранилище нельзя.
