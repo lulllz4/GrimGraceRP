@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfile } from '@/lib/auth'
 import { ELEMENTS, REGIONS, STATUS_LABEL, characterThemeStyle } from '@/lib/elements'
 import { DIVIDERS } from '@/lib/blocks'
+import { SHEET, SHEET_FIELDS, SHEET_RULE } from '@/lib/sheet'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,16 +40,6 @@ export default async function CharacterPage({
   const player = c.profiles as { username: string; display_name: string | null } | null
   const element = ELEMENTS[c.element as keyof typeof ELEMENTS]
   const region = REGIONS[c.region as keyof typeof REGIONS]
-
-  const facts: Array<[string, string | null]> = [
-    ['Полное имя', c.full_name],
-    ['Возраст', c.age_note],
-    ['Природа', c.species],
-    ['Сторона', c.faction],
-    ['Титул', c.rank_title],
-    ['Занятие', c.occupation],
-  ]
-  const shown = facts.filter(([, v]) => v && String(v).trim())
 
   const dividerSym = DIVIDERS[c.theme_divider as string] ?? DIVIDERS.fleuron
   const themeStyle = characterThemeStyle(c)
@@ -136,27 +127,47 @@ export default async function CharacterPage({
         </blockquote>
       )}
 
-      {/* ---------- факты ---------- */}
-      {shown.length > 0 && (
-        <dl className="mb-10 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-          {shown.map(([k, v]) => (
-            <div key={k} className="border-b border-[var(--line)] pb-2">
-              <dt className="text-[10px] uppercase tracking-[0.22em] text-[var(--bone-faint)]">{k}</dt>
-              <dd className="mt-1 text-[var(--bone)]">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      {/* ---------- анкета: три части по шаблону ---------- */}
+      {SHEET.map((part, i) => {
+        const filled = part.fields.filter(
+          (f) => String((c as Record<string, string | null>)[f.key] ?? '').trim(),
+        )
+        if (!filled.length) return null
 
-      {/* ---------- описание ---------- */}
-      {c.brief ? (
-        <div className="lead whitespace-pre-line font-[var(--font-cormorant)] text-lg leading-[1.75] text-[var(--bone)]">
-          {c.brief}
-        </div>
-      ) : (
+        return (
+          <section key={part.part} className="gg-sheet">
+            {i > 0 && <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>}
+
+            {filled.map((f) => {
+              const value = String((c as Record<string, string | null>)[f.key])
+              return (
+                <div key={f.key} className={`gg-sheet__item gg-sheet__item--${f.kind}`}>
+                  <h2 className="gg-sheet__head">
+                    <span className="gg-sheet__no">{f.no}.</span> {f.label}
+                  </h2>
+                  <div className="gg-sheet__text">{value}</div>
+                </div>
+              )
+            })}
+          </section>
+        )
+      })}
+
+      {!SHEET_FIELDS.some((f) => String((c as Record<string, string | null>)[f.key] ?? '').trim()) && (
         <p className="text-sm italic text-[var(--bone-faint)]">
           Анкета ещё не заполнена.
         </p>
+      )}
+
+      {/* старое единое описание: показываем, пока автор не разнёс его по разделам */}
+      {c.brief && (
+        <section className="gg-sheet">
+          <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>
+          <div className="gg-sheet__item gg-sheet__item--long">
+            <h2 className="gg-sheet__head">Из прежней анкеты</h2>
+            <div className="gg-sheet__text">{c.brief}</div>
+          </div>
+        </section>
       )}
 
       {/* ---------- мастерская пометка ---------- */}

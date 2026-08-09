@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { isValidHexColor, THEME_FONTS, type ThemeFontKey } from '@/lib/elements'
 import { DIVIDERS } from '@/lib/blocks'
+import { SHEET_FIELDS } from '@/lib/sheet'
 
 const cut = (v: FormDataEntryValue | null, max: number) =>
   String(v ?? '').trim().slice(0, max) || null
@@ -38,16 +39,17 @@ export async function saveSheet(formData: FormData) {
   const themeFont = useTheme && rawFont in THEME_FONTS ? (rawFont as ThemeFontKey) : null
   const themeDivider = useTheme && rawDivider in DIVIDERS ? rawDivider : null
 
+  /* девять пунктов анкеты — по одному описанию из lib/sheet.ts, чтобы форма,
+     страница персонажа и сохранение не разъезжались */
+  const sheet: Record<string, string | null> = {}
+  for (const f of SHEET_FIELDS) {
+    sheet[f.key] = cut(formData.get(f.key), f.max)
+  }
+
   const { error } = await supabase.from('characters').update({
-    full_name:  cut(formData.get('full_name'), 120),
-    age_note:   cut(formData.get('age_note'), 60),
-    species:    cut(formData.get('species'), 60),
-    faction:    cut(formData.get('faction'), 80),
-    rank_title: cut(formData.get('rank_title'), 80),
-    occupation: cut(formData.get('occupation'), 80),
+    ...sheet,
     epithet:    cut(formData.get('epithet'), 100),
     quote:      cut(formData.get('quote'), 300),
-    brief:      cut(formData.get('brief'), 20000),
     theme_accent:  themeAccent,
     theme_font:    themeFont,
     theme_divider: themeDivider,

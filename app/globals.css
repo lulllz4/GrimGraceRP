@@ -1730,6 +1730,118 @@ select.field { cursor: pointer }
 
 
 
+/* ═══════════════ АНКЕТА ПЕРСОНАЖА ═══════════════
+   Текста в разделах может быть очень много, поэтому здесь всё подчинено
+   чтению длинных кусков: узкая мера строки, крупный интерлиньяж, ясная
+   лестница заголовков и воздух между разделами. */
+
+.gg-sheet {
+  margin: 0 0 2.5rem;
+}
+
+/* орнамент между частями — тот же, что в шаблоне анкеты */
+.gg-sheet__rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  margin: 3rem 0 2.6rem;
+  color: var(--accent, var(--bone-faint));
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.gg-sheet__rule::before,
+.gg-sheet__rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 70%, transparent) 20%,
+    color-mix(in srgb, var(--accent, var(--bone-faint)) 70%, transparent) 80%,
+    transparent);
+}
+
+.gg-sheet__item { margin: 0 0 1.8rem; }
+
+/* короткие пункты — имя, возраст, сущность, статус — идут плотнее:
+   это визитка, а не чтение */
+.gg-sheet__item--short {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line);
+}
+.gg-sheet__item--short .gg-sheet__head { margin: 0; flex: 0 0 11rem; }
+.gg-sheet__item--short .gg-sheet__text { flex: 1 1 14rem; }
+
+.gg-sheet__head {
+  font-family: var(--font-display);
+  font-size: 1.32rem;
+  letter-spacing: 0.06em;
+  color: var(--bone);
+  margin: 0 0 0.7rem;
+}
+
+/* римская цифра — тише названия, но видна: по ней глаз находит раздел */
+.gg-sheet__no {
+  color: var(--accent, var(--bone-faint));
+  margin-right: 0.35em;
+}
+
+.gg-sheet__text {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: var(--t-lg);
+  line-height: 1.85;
+  color: var(--bone);
+  /* переносы строк автора сохраняем: анкету пишут абзацами */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Мера строки для длинных разделов. В колонке страницы выходило 72 знака —
+   верхняя граница комфортного; на разделе в тысячу слов глаз начинает
+   терять начало следующей строки. 38rem дают около 66. */
+.gg-sheet__item--long .gg-sheet__text { max-width: 38rem; }
+
+/* ---- анкета в форме правки ---- */
+
+.gg-sheet__part { display: grid; gap: 1.4rem; }
+
+.gg-sheet__field > span { display: block; }
+
+.gg-sheet__field .gg-sheet__no {
+  font-weight: 400;
+  font-style: normal;
+}
+
+.gg-sheet__opt {
+  font-style: normal;
+  color: var(--bone-faint);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* поле под длинный текст: растягивается мышью, но и стартовая высота
+   такая, чтобы не писать в щёлку */
+.gg-sheet__area {
+  min-height: 14rem;
+  resize: vertical;
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: var(--t-lg);
+  line-height: 1.8;
+}
+
+@media (max-width: 40rem) {
+  .gg-sheet__item--short { display: block; }
+  .gg-sheet__item--short .gg-sheet__head { margin-bottom: 0.3rem; }
+  .gg-sheet__rule { margin: 2.2rem 0 2rem; gap: 0.8rem; }
+  .gg-sheet__area { min-height: 11rem; }
+}
+
 /* ═══════════════ АТМОСФЕРА ПОСТА ═══════════════ */
 
 /* Фон сцены и дымка приезжают переменными из atmosphereStyle().

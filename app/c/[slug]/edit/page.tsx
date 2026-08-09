@@ -5,6 +5,7 @@ import { requireUser } from '@/lib/auth'
 import { ELEMENTS, REGIONS, THEME_FONTS, type ThemeFontKey } from '@/lib/elements'
 import { DIVIDERS } from '@/lib/blocks'
 import AvatarUpload from '@/components/AvatarUpload'
+import { SHEET, SHEET_RULE } from '@/lib/sheet'
 import { saveSheet } from './actions'
 
 const DIVIDER_LABELS: Record<string, string> = {
@@ -18,15 +19,6 @@ const DIVIDER_LABELS: Record<string, string> = {
 }
 
 export const dynamic = 'force-dynamic'
-
-const FIELDS: Array<{ name: string; label: string; hint?: string; max: number }> = [
-  { name: 'full_name',  label: 'Полное имя',  hint: 'как записано в бумагах', max: 120 },
-  { name: 'age_note',   label: 'Возраст',     hint: 'можно «на вид двадцать»', max: 60 },
-  { name: 'species',    label: 'Природа',     hint: 'человек, вампир, полукровка…', max: 60 },
-  { name: 'faction',    label: 'Сторона',     max: 80 },
-  { name: 'rank_title', label: 'Титул',       max: 80 },
-  { name: 'occupation', label: 'Занятие',     max: 80 },
-]
 
 const input =
   'w-full rounded-sm border border-[var(--line)] bg-[var(--ink-2)] px-3 py-2 ' +
@@ -151,55 +143,58 @@ export default async function EditSheet({
           </span>
         </label>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {FIELDS.map((f) => (
-            <label key={f.name} className="grid gap-1">
-              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--bone-faint)]">
-                {f.label}
-              </span>
-              <input
-                name={f.name}
-                defaultValue={(c as Record<string, string | null>)[f.name] ?? ''}
-                maxLength={f.max}
-                className={input}
-              />
-              {f.hint && (
-                <span className="text-xs text-[var(--bone-faint)]">{f.hint}</span>
-              )}
-            </label>
-          ))}
+        {/* ============ анкета: три части по шаблону ============ */}
+        {SHEET.map((part, i) => (
+          <div key={part.part} className="gg-sheet__part">
+            {i > 0 && <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>}
+
+            {part.fields.map((f) => (
+              <label key={f.key} className="gg-field gg-sheet__field">
+                <span>
+                  <b className="gg-sheet__no">{f.no}.</b> {f.label}
+                  {f.optional && <i className="gg-sheet__opt"> — по желанию</i>}
+                </span>
+
+                {f.kind === 'short' ? (
+                  <input
+                    name={f.key}
+                    defaultValue={(c as Record<string, string | null>)[f.key] ?? ''}
+                    maxLength={f.max}
+                    className="gg-input"
+                  />
+                ) : (
+                  <textarea
+                    name={f.key}
+                    defaultValue={(c as Record<string, string | null>)[f.key] ?? ''}
+                    maxLength={f.max}
+                    rows={10}
+                    className="gg-input gg-sheet__area"
+                  />
+                )}
+
+                {f.hint && <small>{f.hint}</small>}
+              </label>
+            ))}
+          </div>
+        ))}
+
+        {/* ============ мелочи оформления ============ */}
+        <div className="gg-sheet__part">
+          <div className="gg-sheet__rule" aria-hidden="true">{SHEET_RULE}</div>
+
+          <label className="gg-field gg-sheet__field">
+            <span>Эпитет</span>
+            <input name="epithet" defaultValue={c.epithet ?? ''} maxLength={100}
+                   placeholder="Собиратель тишины" className="gg-input" />
+            <small>Короткая строка под именем — видна и в постах.</small>
+          </label>
+
+          <label className="gg-field gg-sheet__field">
+            <span>Цитата</span>
+            <input name="quote" defaultValue={c.quote ?? ''} maxLength={300} className="gg-input" />
+            <small>Одна фраза. Кавычки поставятся сами.</small>
+          </label>
         </div>
-
-        <label className="grid gap-1">
-          <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--bone-faint)]">
-            Цитата
-          </span>
-          <input
-            name="quote"
-            defaultValue={c.quote ?? ''}
-            maxLength={300}
-            className={input}
-          />
-          <span className="text-xs text-[var(--bone-faint)]">
-            Одна фраза. Кавычки поставятся сами.
-          </span>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--bone-faint)]">
-            Описание
-          </span>
-          <textarea
-            name="brief"
-            defaultValue={c.brief ?? ''}
-            rows={18}
-            maxLength={20000}
-            className={input + ' resize-y font-[var(--font-cormorant)] text-lg leading-relaxed'}
-          />
-          <span className="text-xs text-[var(--bone-faint)]">
-            Внешность, характер, прошлое, связи. Пустая строка разделяет абзацы.
-          </span>
-        </label>
 
         <div className="flex items-center gap-4">
           <button className="border border-[var(--line)] px-6 py-3 text-xs uppercase tracking-widest text-[var(--bone)] hover:border-[var(--crimson-lt)]">
